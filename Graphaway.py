@@ -1,29 +1,26 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 
-# Function to read the input file
 def read_file(uploaded_file):
     try:
         return pd.read_csv(uploaded_file)
     except:
-        st.error("Unsupported file format. Please upload a file with tabular data.")
-        return None
+        try:
+            return pd.read_csv(uploaded_file, delim_whitespace=True)
+        except:
+            st.error("Unsupported file format. Please upload a valid CSV file with tabular data (comma or space-separated).")
+            return None
 
-# Function to create the plot
 def plot_graph(data, x_column, y_column, x_log_scale, y_log_scale, x_range, y_range):
-    # Extract selected columns
     x_data = data[x_column]
     y_data = data[y_column]
     
-    # Apply log scale if selected
     if x_log_scale:
         plt.xscale('log')
     if y_log_scale:
         plt.yscale('log')
 
-    # Set the plot limits if provided
     plt.figure(figsize=(10, 6))
     plt.plot(x_data, y_data, marker='o', linestyle='-', color='b')
     
@@ -39,7 +36,6 @@ def plot_graph(data, x_column, y_column, x_log_scale, y_log_scale, x_range, y_ra
     plt.tight_layout()
     st.pyplot(plt)
 
-# Streamlit app interface
 def main():
     st.title("Interactive Data Plotting with Streamlit")
     uploaded_file = st.file_uploader("Upload your data file")
@@ -66,12 +62,9 @@ def main():
                 y_range_min = st.number_input(f"Y-axis {y_column} min", value=float(data[y_column].min()))
                 y_range_max = st.number_input(f"Y-axis {y_column} max", value=float(data[y_column].max()))
 
-            # Plotting button
             if st.button("Plot Graph"):
                 x_range = (x_range_min, x_range_max)
                 y_range = (y_range_min, y_range_max)
-                
-                # Plot the graph
                 plot_graph(data, x_column, y_column, x_log_scale, y_log_scale, x_range, y_range)
 
 if __name__ == "__main__":
