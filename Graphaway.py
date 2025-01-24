@@ -8,9 +8,9 @@ def read_file(uploaded_file):
             return pd.read_csv(uploaded_file, delim_whitespace=True)
         else:
             return pd.read_csv(uploaded_file)
-        except:
-            st.error("Unsupported file format. Please upload a valid CSV file with tabular data (comma or space-separated).")
-            return None
+    except:
+        st.error("Unsupported file format. Please upload a valid CSV file with tabular data (comma or space-separated).")
+        return None
 
 def plot_graph(data, x_column, y_column, x_log_scale, y_log_scale, x_range, y_range):
     x_data = data[x_column]
