@@ -16,14 +16,14 @@ def plot_graph(data, x_column, y_column, x_log_scale, y_log_scale, x_range, y_ra
     x_data = data[x_column]
     y_data = data[y_column]
     
+    
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(x_data, y_data, marker='o', linestyle='-', color='b')
     if x_log_scale:
         plt.xscale('log')
     if y_log_scale:
         plt.yscale('log')
-
-    plt.figure(figsize=(10, 6))
-    plt.plot(x_data, y_data, marker='o', linestyle='-', color='b')
-    
     if x_range:
         plt.xlim(x_range)
     if y_range:
@@ -42,12 +42,13 @@ def main():
 
     if uploaded_file is not None:
         
-        pd.set_option('display.float_format', '{:e}'.format)
+        
         data = read_file(uploaded_file)
         
         if data is not None:
+            display_data = data.applymap(lambda x: f'{x:.3e}' if isinstance(x, (float, int)) else x)
             st.subheader("Data Preview")
-            st.write(data)
+            st.write(display_data)
             columns = data.columns.tolist()
 
             col1, col2 = st.columns(2)
@@ -55,14 +56,14 @@ def main():
             with col1:
                 x_column = st.selectbox("Select X-axis column", columns)
                 x_log_scale = st.checkbox("Log scale for X-axis", value=False)
-                x_range_min = st.number_input(f"X-axis {x_column} min", value=float(data[x_column].min()))
-                x_range_max = st.number_input(f"X-axis {x_column} max", value=float(data[x_column].max()))
+                x_range_min = st.number_input(f"X-axis {x_column} min", value=float(data[x_column].min()),format="%.10e")
+                x_range_max = st.number_input(f"X-axis {x_column} max", value=float(data[x_column].max()),format="%.10e")
 
             with col2:
-                y_column = st.selectbox("Select Y-axis column", columns)
+                y_column = st.selectbox("Select Y-axis column", columns, index=1)
                 y_log_scale = st.checkbox("Log scale for Y-axis", value=False)
-                y_range_min = st.number_input(f"Y-axis {y_column} min", value=float(data[y_column].min()))
-                y_range_max = st.number_input(f"Y-axis {y_column} max", value=float(data[y_column].max()))
+                y_range_min = st.number_input(f"Y-axis {y_column} min", value=float(data[y_column].min()),format="%.10e")
+                y_range_max = st.number_input(f"Y-axis {y_column} max", value=float(data[y_column].max()),format="%.10e")
 
             if st.button("Plot Graph"):
                 x_range = (x_range_min, x_range_max)
