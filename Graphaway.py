@@ -41,6 +41,7 @@ def main():
     uploaded_file = st.file_uploader("Upload your data file")
 
     if uploaded_file is not None:
+        pd.set_option('display.float_format', '{:e}'.format)
         data = read_file(uploaded_file)
         
         if data is not None:
