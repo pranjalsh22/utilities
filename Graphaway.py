@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 def read_file(uploaded_file):
     try:
-        if st.button("small space is seperating criteria"):
+        if st.checkbox("small space is seperating criteria"):
             return pd.read_csv(uploaded_file, delim_whitespace=True)
         else:
             return pd.read_csv(uploaded_file)
