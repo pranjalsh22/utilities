@@ -19,9 +19,9 @@ def plot_graph(data, x_column, y_column, x_log_scale, y_log_scale, x_range, y_ra
     
     # Apply log scale if selected
     if x_log_scale:
-        x_data = np.log10(x_data)
+        plt.xscale('log')
     if y_log_scale:
-        y_data = np.log10(y_data)
+        plt.yscale('log')
 
     # Set the plot limits if provided
     plt.figure(figsize=(10, 6))
@@ -42,23 +42,16 @@ def plot_graph(data, x_column, y_column, x_log_scale, y_log_scale, x_range, y_ra
 # Streamlit app interface
 def main():
     st.title("Interactive Data Plotting with Streamlit")
-
-    # File upload
-    uploaded_file = st.file_uploader("Upload your .txt or .csv file", type=["txt", "csv"])
+    uploaded_file = st.file_uploader("Upload your data file")
 
     if uploaded_file is not None:
-        # Read the file and display a preview
         data = read_file(uploaded_file)
         
         if data is not None:
-            # Show the dataframe preview
             st.subheader("Data Preview")
-            st.write(data.head())
-
-            # Select columns for x and y axes
+            st.write(data)
             columns = data.columns.tolist()
 
-            # 2 Columns for selecting X and Y Axis
             col1, col2 = st.columns(2)
 
             with col1:
