@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 
 # Function to read the input file
 def read_file(uploaded_file):
-    if uploaded_file.name.endswith(".txt") or uploaded_file.name.endswith(".csv"):
+    try:
         return pd.read_csv(uploaded_file)
-    else:
-        st.error("Unsupported file format. Please upload a .txt or .csv file.")
+    except:
+        st.error("Unsupported file format. Please upload a file with tabular data.")
         return None
 
 # Function to create the plot
