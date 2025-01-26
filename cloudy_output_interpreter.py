@@ -8,16 +8,19 @@ from io import StringIO, BytesIO
 def extract_cloudy_data(file_content):
     wavelengths = []
     intensities = []
+    labels = []  # Store labels for identifying lines
     results = []
     all_lines = file_content.splitlines()
 
     # Parse the file line by line
     for line in all_lines:
         # Match emission line data (e.g., "O  3 5006.84A 40.150")
-        match = re.search(r"[\w\s]+\s+([\d.]+)A\s+([\d.]+)", line)
+        match = re.search(r"([\w\s]+)\s+([\d.]+)A\s+([\d.]+)", line)
         if match:
-            wavelength = float(match.group(1))  # Wavelength in Å
-            intensity = float(match.group(2))  # Intensity in log(erg/s)
+            label = match.group(1).strip()  # Element/ion name
+            wavelength = float(match.group(2))  # Wavelength in Å
+            intensity = float(match.group(3))  # Intensity in log(erg/s)
+            labels.append(label)
             wavelengths.append(wavelength)
             intensities.append(intensity)
         else:
@@ -25,7 +28,7 @@ def extract_cloudy_data(file_content):
             if any(keyword in line.lower() for keyword in ["warning", "note", "luminosity", "pressure", "density"]):
                 results.append(line.strip())
 
-    return wavelengths, intensities, results, all_lines
+    return wavelengths, intensities, labels, results, all_lines
 
 # Streamlit app layout
 st.title("Cloudy Output File Processor")
@@ -37,7 +40,7 @@ uploaded_file = st.file_uploader("Upload Cloudy Output File", type=["txt"])
 if uploaded_file:
     # Read and process the file content
     file_content = StringIO(uploaded_file.getvalue().decode("utf-8")).read()
-    wavelengths, intensities, results, all_lines = extract_cloudy_data(file_content)
+    wavelengths, intensities, labels, results, all_lines = extract_cloudy_data(file_content)
 
     # Display full file content
     st.subheader("Full File Content")
@@ -52,6 +55,7 @@ if uploaded_file:
     if wavelengths and intensities:
         # Create a DataFrame for the line data
         line_data = pd.DataFrame({
+            "Label": labels,
             "Wavelength (Å)": wavelengths,
             "Log(Intensity) [erg/s]": intensities
         })
@@ -69,12 +73,35 @@ if uploaded_file:
             mime="text/csv"
         )
 
+        # Allow user to input a line label to highlight
+        st.subheader("Highlight Specific Emission Line on the Graph")
+        line_to_highlight = st.text_input(
+            "Enter the line label to highlight (e.g., 'O  3', 'H  1')",
+            value="O  3"
+        )
+
         # Plot the emission line data
         st.subheader("Emission Line Intensities")
         st.write("Below is the bar plot of the extracted emission lines (wavelength vs intensity).")
 
-        fig, ax = plt.subplots(figsize=(10, 6))
+        fig, ax = plt.subplots(figsize=(12, 6))
         ax.bar(wavelengths, intensities, width=1.0, color="blue", alpha=0.7)
+
+        # Highlight the selected line
+        if line_to_highlight:
+            for i, label in enumerate(labels):
+                if label.lower() == line_to_highlight.lower():
+                    ax.annotate(
+                        f"{label} ({wavelengths[i]:.2f} Å)",
+                        (wavelengths[i], intensities[i]),
+                        xytext=(wavelengths[i] + 5, intensities[i] + 0.5),
+                        arrowprops=dict(facecolor="red", arrowstyle="->"),
+                        fontsize=10,
+                        color="red"
+                    )
+                    # Change bar color for the highlighted line
+                    ax.bar(wavelengths[i], intensities[i], width=1.0, color="red", alpha=0.7)
+
         ax.set_title("Emission Line Intensities", fontsize=16)
         ax.set_xlabel("Wavelength (Å)", fontsize=14)
         ax.set_ylabel("Log(Intensity) [erg/s]", fontsize=14)
