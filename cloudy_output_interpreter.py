@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import streamlit as st
 from io import StringIO
 
-# Function to extract line intensities and all other relevant results
+# Function to extract line intensities and other relevant results
 def extract_cloudy_data(file_content):
     wavelengths = []
     intensities = []
@@ -57,7 +57,8 @@ if uploaded_file:
         })
 
         st.subheader("Emission Line Data")
-        st.dataframe(line_data)
+        with st.expander("Show Emission Line Data Table"):
+            st.dataframe(line_data)
 
         # Download option for line data
         csv_data = line_data.to_csv(index=False)
