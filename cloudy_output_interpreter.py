@@ -61,11 +61,30 @@ if uploaded_file:
         })
 
         st.subheader("Emission Line Data")
-        with st.expander("Show Emission Line Data Table"):
-            st.dataframe(line_data)
+
+        # Options to search, sort, and scroll through the dataset
+        with st.expander("Explore Emission Line Data"):
+            # Search for a specific label
+            search_label = st.text_input("Search for a specific label (e.g., 'O  3'):", value="")
+            if search_label:
+                filtered_data = line_data[line_data["Label"].str.contains(search_label, case=False, na=False)]
+                st.write(f"Showing results for '{search_label}':")
+                st.dataframe(filtered_data, height=300)
+            else:
+                filtered_data = line_data
+
+            # Sort options
+            sort_option = st.radio("Sort Data By:", ("Wavelength (Å)", "Label"))
+            if sort_option == "Wavelength (Å)":
+                filtered_data = filtered_data.sort_values(by="Wavelength (Å)")
+            elif sort_option == "Label":
+                filtered_data = filtered_data.sort_values(by="Label")
+
+            # Display sorted dataset in a scrollable table
+            st.dataframe(filtered_data, height=300)
 
         # Download option for line data
-        csv_data = line_data.to_csv(index=False)
+        csv_data = filtered_data.to_csv(index=False)
         st.download_button(
             label="Download Emission Line Data as CSV",
             data=csv_data,
@@ -73,11 +92,11 @@ if uploaded_file:
             mime="text/csv"
         )
 
-        # Allow user to input a line label to highlight
+        # Highlight specific label on the graph
         st.subheader("Highlight Specific Emission Line on the Graph")
         line_to_highlight = st.text_input(
             "Enter the line label to highlight (e.g., 'O  3', 'H  1')",
-            value="O  3"
+            value=""
         )
 
         # Plot the emission line data
