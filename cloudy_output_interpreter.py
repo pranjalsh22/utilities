@@ -2,7 +2,7 @@ import re
 import pandas as pd
 import matplotlib.pyplot as plt
 import streamlit as st
-from io import StringIO
+from io import StringIO, BytesIO
 
 # Function to extract line intensities and other relevant results
 def extract_cloudy_data(file_content):
@@ -81,10 +81,15 @@ if uploaded_file:
         ax.grid(axis="y", linestyle="--", alpha=0.6)
         st.pyplot(fig)
 
+        # Save the plot to an in-memory buffer
+        plot_buffer = BytesIO()
+        fig.savefig(plot_buffer, format="png")
+        plot_buffer.seek(0)
+
         # Download option for the plot
         st.download_button(
             label="Download Emission Line Plot as PNG",
-            data=fig.savefig("emission_line_plot.png"),
+            data=plot_buffer,
             file_name="emission_line_plot.png",
             mime="image/png"
         )
