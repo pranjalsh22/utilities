@@ -1,3 +1,4 @@
 import streamlit as st
-st.title("m learning")
-st.write("python")
+st.sidebar.title("m learning")
+st.sidebar.write("python")
+"prndhwbsj"
