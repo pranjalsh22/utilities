@@ -1,0 +1,5 @@
+# Ignore Google Drive credentials file
+credentials.json
+
+# Ignore data files
+scientists_data.json
