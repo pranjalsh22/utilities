@@ -127,4 +127,4 @@ if st.button('Calculate'):
     st.success(f"**Comoving Volume (V)**: {results['V_Gpc']:.1f} Gpc³")
 #--------
 st.header("References")
-st.link("Astro.ucla.edu","https://www.astro.ucla.edu/%7Ewright/CC.python")
+st.markdown('[Astro.ucla.edu](https://www.astro.ucla.edu/~wright/CC.python)')
