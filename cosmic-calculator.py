@@ -87,20 +87,31 @@ def cosmology_calculator(z, H0, WM, WV):
 # Displaying Formulas
 st.title('Cosmology Calculator')
 
-# Display formulas using st.latex() before calculation
-st.subheader('Formulas Used:')
-st.latex(r"a = \frac{1}{1+z}")
-st.latex(r"Age = \int_{a(z)}^{1} \frac{da}{a \sqrt{ \Omega_k + \frac{\Omega_m}{a} + \frac{\Omega_r}{a^2} + \Omega_\Lambda a^2 }}")
-st.latex(r"D_{CMR} = \int_{a(z)}^{1} \frac{da}{a \sqrt{\Omega_k + \frac{\Omega_m}{a} + \frac{\Omega_r}{a^2} + \Omega_\Lambda a^2 }}")
-st.latex(r"D_A = \frac{D_{CMR}}{1+z}")
-st.latex(r"D_L = D_A \cdot (1+z)^2")
-st.latex(r"V = \frac{D_{CMR}^3}{3}")
-
-# Input fields
+# Input fields for cosmology parameters
 z = st.number_input('Redshift (z)', min_value=0.0, value=1.0, step=0.1)
 H0 = st.number_input('Hubble Constant (H₀)', min_value=50.0, value=75.0, step=1.0)
 WM = st.number_input('Omega Matter (Ωₘ)', min_value=0.0, max_value=1.0, value=0.3, step=0.01)
 WV = st.number_input('Omega Vacuum (Ωλ)', min_value=0.0, max_value=1.0, value=0.7, step=0.01)
+
+# Displaying formulas and their meanings using st.columns
+st.subheader('Formulas Used:')
+col1, col2 = st.columns([3, 1])
+
+with col1:
+    st.latex(r"a = \frac{1}{1+z}")
+    st.latex(r"Age = \int_{a(z)}^{1} \frac{da}{a \sqrt{ \Omega_k + \frac{\Omega_m}{a} + \frac{\Omega_r}{a^2} + \Omega_\Lambda a^2 }}")
+    st.latex(r"D_{CMR} = \int_{a(z)}^{1} \frac{da}{a \sqrt{\Omega_k + \frac{\Omega_m}{a} + \frac{\Omega_r}{a^2} + \Omega_\Lambda a^2 }}")
+    st.latex(r"D_A = \frac{D_{CMR}}{1+z}")
+    st.latex(r"D_L = D_A \cdot (1+z)^2")
+    st.latex(r"V = \frac{D_{CMR}^3}{3}")
+
+with col2:
+    st.write("**a (scale factor)**: Fractional size of the universe at redshift z.")
+    st.write("**Age**: Time elapsed since the Big Bang.")
+    st.write("**Dₖ (Comoving Radial Distance)**: Distance between two objects at redshift z.")
+    st.write("**Dₐ (Angular Size Distance)**: Distance for angular size measurement.")
+    st.write("**Dₗ (Luminosity Distance)**: Distance based on the observed brightness of an object.")
+    st.write("**V (Comoving Volume)**: Volume of the observable universe.")
 
 # Calculation button
 if st.button('Calculate'):
