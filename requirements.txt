@@ -4,6 +4,3 @@ matplotlib
 numpy
 plotly
 pydrive
-sqlite3
-psycopg2-binary
-python-dotenv
