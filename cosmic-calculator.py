@@ -106,12 +106,11 @@ with col1:
     st.latex(r"V = \frac{D_{CMR}^3}{3}")
 
 with col2:
-    st.write("**a (scale factor)**: Fractional size of the universe at redshift z.")
-    st.write("**Age**: Time elapsed since the Big Bang.")
-    st.write("**Dₖ (Comoving Radial Distance)**: Distance between two objects at redshift z.")
-    st.write("**Dₐ (Angular Size Distance)**: Distance for angular size measurement.")
-    st.write("**Dₗ (Luminosity Distance)**: Distance based on the observed brightness of an object.")
-    st.write("**V (Comoving Volume)**: Volume of the observable universe.")
+    st.write("**a (Scale Factor)**: Fractional size of the universe at redshift z.")
+    st.write("**Ωₘ (Matter Density)**: Fraction of the universe's energy density due to matter.")
+    st.write("**Ωλ (Vacuum Density)**: Fraction of the universe's energy density due to dark energy.")
+    st.write("**Ωₖ (Curvature Density)**: Fraction of the universe's energy density due to spatial curvature.")
+    st.write("**Ωᵣ (Radiation Density)**: Fraction of the universe's energy density due to radiation (massless neutrinos).")
 
 # Calculation button
 if st.button('Calculate'):
