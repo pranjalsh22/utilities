@@ -125,3 +125,6 @@ if st.button('Calculate'):
     st.success(f"**Scale (kpc/”)**: {results['kpc_DA']:.2f} kpc/”")
     st.success(f"**Luminosity Distance (Dₗ)**: {results['DL_Mpc']:.1f} Mpc or {results['DL_Gyr']:.1f} Gly")
     st.success(f"**Comoving Volume (V)**: {results['V_Gpc']:.1f} Gpc³")
+#--------
+st.header("References")
+st.link("Astro.ucla.edu","https://www.astro.ucla.edu/%7Ewright/CC.python")
