@@ -1,7 +1,7 @@
 import streamlit as st
 from math import *
 
-def cosmology_calculator(z, H0, WM, WV, verbose=False):
+def cosmology_calculator(z, H0, WM, WV):
     WR = 0.0
     WK = 0.0
     c = 299792.458  # velocity of light in km/sec
@@ -79,32 +79,36 @@ def cosmology_calculator(z, H0, WM, WV, verbose=False):
     DL_Mpc = (c / H0) * DL
     DL_Gyr = (Tyr / H0) * DL
 
-    # Output results
-    if verbose:
-        st.write(f"For H_o = {H0}, Omega_M = {WM}, Omega_vac = {WV}, z = {z}")
-        st.write(f"It is now {age_Gyr:.1f} Gyr since the Big Bang.")
-        st.write(f"The age at redshift z was {zage_Gyr:.1f} Gyr.")
-        st.write(f"The light travel time was {DTT_Gyr:.1f} Gyr.")
-        st.write(f"The comoving radial distance is {DCMR_Mpc:.1f} Mpc or {DCMR_Gyr:.1f} Gly.")
-        st.write(f"The comoving volume within redshift z is {V_Gpc:.1f} Gpc^3.")
-        st.write(f"The angular size distance D_A is {DA_Mpc:.1f} Mpc or {DA_Gyr:.1f} Gly.")
-        st.write(f"This gives a scale of {kpc_DA:.2f} kpc/$\prime$")
-        st.write(f"The luminosity distance D_L is {DL_Mpc:.1f} Mpc or {DL_Gyr:.1f} Gly.")
-        st.write(f"The distance modulus, m-M, is {(5 * log10(DL_Mpc * 1e6) - 5):.2f}")
-    else:
-        st.write(f"{zage_Gyr:.2f}, {DCMR_Mpc:.2f}, {kpc_DA:.2f}, {(5 * log10(DL_Mpc * 1e6) - 5):.2f}")
+    # LaTeX: Volume formula
+    st.latex(r"V = \frac{D_{CMR}^3}{3}")
+
+    VCM = ratio * DCMR * DCMR * DCMR / 3.0
+    V_Gpc = 4.0 * pi * ((0.001 * c / H0) ** 3) * VCM
+
+    # Display results using Streamlit info and success for clear visualization
+    st.info(f"**For Hubble Constant (H₀):** {H0} km/s/Mpc")
+    st.info(f"**Omega Matter (Ωₘ):** {WM}")
+    st.info(f"**Omega Vacuum (Ωλ):** {WV}")
+    st.info(f"**Redshift (z):** {z}")
+    
+    st.success(f"The current age of the universe is: **{age_Gyr:.1f} Gyr**")
+    st.success(f"The age at redshift z was: **{zage_Gyr:.1f} Gyr**")
+    st.success(f"The comoving radial distance is: **{DCMR_Mpc:.1f} Mpc** or **{DCMR_Gyr:.1f} Gly**")
+    st.success(f"The angular size distance (Dₐ) is: **{DA_Mpc:.1f} Mpc** or **{DA_Gyr:.1f} Gly**")
+    st.success(f"The luminosity distance (Dₗ) is: **{DL_Mpc:.1f} Mpc** or **{DL_Gyr:.1f} Gly**")
+    st.success(f"The scale is: **{kpc_DA:.2f} kpc/”**")
+    st.success(f"The comoving volume at redshift z is: **{V_Gpc:.1f} Gpc³**")
 
 def main():
     st.title('Cosmology Calculator')
 
     z = st.number_input('Redshift (z)', min_value=0.0, value=1.0, step=0.1)
-    H0 = st.number_input('Hubble Constant (H0)', min_value=50.0, value=75.0, step=1.0)
-    WM = st.number_input('Omega_M (Omega_m)', min_value=0.0, max_value=1.0, value=0.3, step=0.01)
-    WV = st.number_input('Omega_vac (Omega_lambda)', min_value=0.0, max_value=1.0, value=0.7, step=0.01)
-    verbose = st.checkbox('Verbose Output', value=False)
+    H0 = st.number_input('Hubble Constant (H₀)', min_value=50.0, value=75.0, step=1.0)
+    WM = st.number_input('Omega Matter (Ωₘ)', min_value=0.0, max_value=1.0, value=0.3, step=0.01)
+    WV = st.number_input('Omega Vacuum (Ωλ)', min_value=0.0, max_value=1.0, value=0.7, step=0.01)
 
     if st.button('Calculate'):
-        cosmology_calculator(z, H0, WM, WV, verbose)
+        cosmology_calculator(z, H0, WM, WV)
 
 if __name__ == "__main__":
     main()
