@@ -87,30 +87,11 @@ def cosmology_calculator(z, H0, WM, WV):
 # Displaying Formulas
 st.title('Cosmology Calculator')
 
-# Default values for cosmology parameters
-default_z = 1.0
-default_H0 = 75.0
-default_WM = 0.3
-default_WV = 0.7
-
-# Calculate default results
-default_results = cosmology_calculator(default_z, default_H0, default_WM, default_WV)
-
-# Displaying default results using st.info and st.success
-st.info("### Default Cosmology Results")
-st.success(f"**Age of the Universe**: {default_results['age_Gyr']:.1f} Gyr")
-st.success(f"**Age at Redshift z = {default_z}**: {default_results['zage_Gyr']:.1f} Gyr")
-st.success(f"**Comoving Radial Distance (Dₖ)**: {default_results['DCMR_Mpc']:.1f} Mpc or {default_results['DCMR_Gyr']:.1f} Gly")
-st.success(f"**Angular Size Distance (Dₐ)**: {default_results['DA_Mpc']:.1f} Mpc or {default_results['DA_Gyr']:.1f} Gly")
-st.success(f"**Scale (kpc/”)**: {default_results['kpc_DA']:.2f} kpc/”")
-st.success(f"**Luminosity Distance (Dₗ)**: {default_results['DL_Mpc']:.1f} Mpc or {default_results['DL_Gyr']:.1f} Gly")
-st.success(f"**Comoving Volume (V)**: {default_results['V_Gpc']:.1f} Gpc³")
-
 # Input fields for cosmology parameters
-z = st.number_input('Redshift (z)', min_value=0.0, value=default_z, step=0.1)
-H0 = st.number_input('Hubble Constant (H₀)', min_value=50.0, value=default_H0, step=1.0)
-WM = st.number_input('Omega Matter (Ωₘ)', min_value=0.0, max_value=1.0, value=default_WM, step=0.01)
-WV = st.number_input('Omega Vacuum (Ωλ)', min_value=0.0, max_value=1.0, value=default_WV, step=0.01)
+z = st.number_input('Redshift (z)', min_value=0.0, value=1.0, step=0.1)
+H0 = st.number_input('Hubble Constant (H₀)', min_value=50.0, value=75.0, step=1.0)
+WM = st.number_input('Omega Matter (Ωₘ)', min_value=0.0, max_value=1.0, value=0.3, step=0.01)
+WV = st.number_input('Omega Vacuum (Ωλ)', min_value=0.0, max_value=1.0, value=0.7, step=0.01)
 
 # Displaying formulas and their meanings using st.columns
 st.subheader('Formulas Used:')
