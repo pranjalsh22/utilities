@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 def read_file(uploaded_file):
     try:
-        if st.checkbox("small space is seperating criteria"):
+        if st.checkbox("Small space is separating criteria"):
             return pd.read_csv(uploaded_file, delim_whitespace=True)
         else:
             return pd.read_csv(uploaded_file)
@@ -15,8 +15,6 @@ def read_file(uploaded_file):
 def plot_graph(data, x_column, y_column, x_log_scale, y_log_scale, x_range, y_range):
     x_data = data[x_column]
     y_data = data[y_column]
-    
-    
 
     plt.figure(figsize=(10, 6))
     plt.plot(x_data, y_data, marker='o', linestyle='-', color='b')
@@ -36,13 +34,11 @@ def plot_graph(data, x_column, y_column, x_log_scale, y_log_scale, x_range, y_ra
     plt.tight_layout()
     st.pyplot(plt)
 
-def main():
+def linegraph():
     st.title("Interactive Data Plotting with Streamlit")
-    uploaded_file = st.file_uploader("Upload your data file")
+    uploaded_file = st.file_uploader("Upload your data file", key="linegraph")
 
     if uploaded_file is not None:
-        
-        
         data = read_file(uploaded_file)
         
         if data is not None:
@@ -56,19 +52,48 @@ def main():
             with col1:
                 x_column = st.selectbox("Select X-axis column", columns)
                 x_log_scale = st.checkbox("Log scale for X-axis", value=False)
-                x_range_min = st.number_input(f"X-axis {x_column} min", value=float(data[x_column].min()),format="%.10e")
-                x_range_max = st.number_input(f"X-axis {x_column} max", value=float(data[x_column].max()),format="%.10e")
+                x_range_min = st.number_input(f"X-axis {x_column} min", value=float(data[x_column].min()), format="%.10e")
+                x_range_max = st.number_input(f"X-axis {x_column} max", value=float(data[x_column].max()), format="%.10e")
 
             with col2:
                 y_column = st.selectbox("Select Y-axis column", columns, index=1)
                 y_log_scale = st.checkbox("Log scale for Y-axis", value=False)
-                y_range_min = st.number_input(f"Y-axis {y_column} min", value=float(data[y_column].min()),format="%.10e")
-                y_range_max = st.number_input(f"Y-axis {y_column} max", value=float(data[y_column].max()),format="%.10e")
+                y_range_min = st.number_input(f"Y-axis {y_column} min", value=float(data[y_column].min()), format="%.10e")
+                y_range_max = st.number_input(f"Y-axis {y_column} max", value=float(data[y_column].max()), format="%.10e")
 
             if st.button("Plot Graph"):
                 x_range = (x_range_min, x_range_max)
                 y_range = (y_range_min, y_range_max)
                 plot_graph(data, x_column, y_column, x_log_scale, y_log_scale, x_range, y_range)
 
-if __name__ == "__main__":
-    main()
+def plot_pie_chart():
+    """Handles file upload and plots a pie chart based on the selected column."""
+    st.title("Pie Chart Visualization")
+    uploaded_file = st.file_uploader("Upload your data file", key="piechart")
+
+    if uploaded_file is not None:
+        data = read_file(uploaded_file)
+
+        if data is not None:
+            st.subheader("Data Preview")
+            st.write(data)
+
+            column = st.selectbox("Select a column for the pie chart", data.columns)
+
+            fig, ax = plt.subplots()
+            data[column].value_counts().plot.pie(autopct='%1.1f%%', ax=ax)
+            ax.set_title(f"Pie Chart of {column}")
+            st.pyplot(fig)
+
+# Main App Logic
+choice = st.selectbox("Choose an option", ["Line Graph", "Pie Chart"])
+if choice == "Line Graph":
+    linegraph()
+elif choice == "Pie Chart":
+    plot_pie_chart()
+
+#---------------------------------------
+
+st.sidebar.info("version 2")
+st.sidebar.write(" \
+version 2: added pie chart")
