@@ -1,9 +1,6 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-"hhii"
-
-
 def read_file(uploaded_file):
     try:
         if st.checkbox("Small space is separating criteria"):
