@@ -89,9 +89,9 @@ st.title('Cosmology Calculator')
 
 # Input fields for cosmology parameters
 z = st.number_input('Redshift (z)', min_value=0.0, value=1.0, step=0.1)
-H0 = st.number_input('Hubble Constant (H₀)', min_value=50.0, value=75.0, step=1.0)
-WM = st.number_input('Omega Matter (Ωₘ)', min_value=0.0, max_value=1.0, value=0.3, step=0.01)
-WV = st.number_input('Omega Vacuum (Ωλ)', min_value=0.0, max_value=1.0, value=0.7, step=0.01)
+H0 = st.number_input('Hubble Constant (H₀)', min_value=69.6, value=75.0, step=1.0)
+WM = st.number_input('Omega Matter (Ωₘ)', min_value=0.0, max_value=1.0, value=0.286, step=0.01)
+WV = st.number_input('Omega Vacuum (Ωλ)', min_value=0.0, max_value=1.0, value=0.714, step=0.01)
 
 # Displaying formulas and their meanings using st.columns
 st.subheader('Formulas Used:')
