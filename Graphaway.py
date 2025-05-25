@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.integrate import simps, trapezoid
+from scipy.integrate import simpson, trapezoid as simps, trapezoid
 
 def read_file(uploaded_file):
     try:
