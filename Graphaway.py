@@ -36,6 +36,17 @@ def plot_graph(data, x_column, y_column, x_log_scale, y_log_scale, x_range, y_ra
     plt.tight_layout()
     st.pyplot(plt)
 
+def is_probably_log(column_data):
+    # Simple heuristic: if all > 0 and max < ~10 and min > -10 (typical for log10 values),
+    # and not too many zeros or negatives, treat as log scale.
+    # You can improve this function if needed.
+    col = np.array(column_data)
+    if np.any(col <= 0):
+        return False
+    if (np.min(col) > -10) and (np.max(col) < 10):
+        return True
+    return False
+
 def integrate_curve(x_data, y_data, log_x=False, log_y=False, method='trapezoid'):
     if log_x:
         x_data = np.power(10, x_data)
@@ -85,13 +96,15 @@ def linegraph():
 
             with col1:
                 x_column = st.selectbox("Select X-axis column", columns)
-                x_log_scale = st.checkbox("Log scale for X-axis", value=False)
+                x_log_detected = is_probably_log(data[x_column])
+                x_log_scale = st.checkbox("Log scale for X-axis", value=x_log_detected)
                 x_range_min = st.number_input(f"X-axis {x_column} min", value=float(data[x_column].min()), format="%.10e")
                 x_range_max = st.number_input(f"X-axis {x_column} max", value=float(data[x_column].max()), format="%.10e")
 
             with col2:
                 y_column = st.selectbox("Select Y-axis column", columns, index=1)
-                y_log_scale = st.checkbox("Log scale for Y-axis", value=False)
+                y_log_detected = is_probably_log(data[y_column])
+                y_log_scale = st.checkbox("Log scale for Y-axis", value=y_log_detected)
                 y_range_min = st.number_input(f"Y-axis {y_column} min", value=float(data[y_column].min()), format="%.10e")
                 y_range_max = st.number_input(f"Y-axis {y_column} max", value=float(data[y_column].max()), format="%.10e")
 
@@ -104,7 +117,11 @@ def linegraph():
             st.subheader("🔢 Integration")
             st.write("Estimate area under the curve.")
 
-            log_data = st.checkbox("Is your data already in log scale?", value=False)
+            # Show detected info and option to override
+            st.markdown(f"**Log detection:** X-axis: {x_log_detected}, Y-axis: {y_log_detected}")
+            override_log_x = st.checkbox("Override: X-axis data is in log scale", value=x_log_scale)
+            override_log_y = st.checkbox("Override: Y-axis data is in log scale", value=y_log_scale)
+
             method = st.selectbox("Integration Method", ["trapezoid", "Simpson 1/3", "Simpson 3/8"])
 
             if st.button("➕ Calculate Integral"):
@@ -112,8 +129,8 @@ def linegraph():
                 y_vals = data[y_column].values
                 result = integrate_curve(
                     x_vals, y_vals,
-                    log_x=x_log_scale and not log_data,
-                    log_y=y_log_scale and not log_data,
+                    log_x=override_log_x,
+                    log_y=override_log_y,
                     method=method
                 )
                 if isinstance(result, str) and result.startswith("❌"):
