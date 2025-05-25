@@ -136,7 +136,7 @@ def linegraph():
                 if isinstance(result, str) and result.startswith("❌"):
                     st.error(result)
                 else:
-                    st.success(f"Estimated integral using {method} rule: {result:.e}")
+                    st.success(f"Estimated integral using {method} rule: {result:E}")
             # ------------------------------------------------------
 
 def plot_pie_chart():
