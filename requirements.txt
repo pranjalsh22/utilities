@@ -5,3 +5,5 @@ numpy
 plotly
 pydrive
 scipy
+scipy.integrate
+simps
