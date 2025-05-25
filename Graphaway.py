@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
+from scipy.integrate import simps, trapezoid
+
 def read_file(uploaded_file):
     try:
         if st.checkbox("Small space is separating criteria"):
@@ -32,6 +35,24 @@ def plot_graph(data, x_column, y_column, x_log_scale, y_log_scale, x_range, y_ra
     plt.grid(True)
     plt.tight_layout()
     st.pyplot(plt)
+
+def integrate_curve(x_data, y_data, log_x=False, log_y=False, method='trapezoid'):
+    # Convert back from log if log scale was used but data was not in log
+    if log_x:
+        x_data = np.power(10, x_data)
+    if log_y:
+        y_data = np.power(10, y_data)
+
+    if method == 'trapezoid':
+        return trapezoid(y_data, x_data)
+    elif method == 'simpson':
+        if len(x_data) < 3:
+            return "Simpson's rule requires at least 3 points."
+        if len(x_data) % 2 == 0:
+            return "Simpson's rule requires an odd number of points. Try removing one row."
+        return simps(y_data, x_data)
+    else:
+        return "Unknown method"
 
 def linegraph():
     st.title("Interactive Data Plotting with Streamlit")
@@ -65,6 +86,24 @@ def linegraph():
                 y_range = (y_range_min, y_range_max)
                 plot_graph(data, x_column, y_column, x_log_scale, y_log_scale, x_range, y_range)
 
+            # ---------------- Integration Section ----------------
+            st.subheader("Optional: Integrate Curve")
+            st.write("Calculate the area under the curve using numerical methods.")
+            log_data = st.checkbox("Is the data already in log scale (before plotting)?", value=False)
+            method = st.selectbox("Choose integration method", ["trapezoid", "simpson"])
+
+            if st.button("Find Integral"):
+                x_vals = data[x_column].values
+                y_vals = data[y_column].values
+                result = integrate_curve(
+                    x_vals, y_vals,
+                    log_x=x_log_scale and not log_data,
+                    log_y=y_log_scale and not log_data,
+                    method=method
+                )
+                st.success(f"Estimated integral using {method} rule: {result}")
+            # ------------------------------------------------------
+
 def plot_pie_chart():
     """Handles file upload and plots a pie chart based on the selected column."""
     st.title("Pie Chart Visualization")
@@ -91,8 +130,6 @@ if choice == "Line Graph":
 elif choice == "Pie Chart":
     plot_pie_chart()
 
-#---------------------------------------
-
+# Sidebar info
 st.sidebar.info("version 2")
-st.sidebar.write(" \
-version 2: added pie chart")
+st.sidebar.write("version 2: added pie chart")
