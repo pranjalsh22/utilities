@@ -14,12 +14,13 @@ def read_file(uploaded_file):
         st.error("Unsupported file format. Please upload a valid CSV file with tabular data (comma or space-separated).")
         return None
 
-def plot_graph(data, x_column, y_column, x_log_scale, y_log_scale, x_range, y_range):
-    x_data = data[x_column]
-    y_data = data[y_column]
-
+def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range):
     plt.figure(figsize=(10, 6))
-    plt.plot(x_data, y_data, marker='o', linestyle='-', color='b')
+    
+    for idx, y_column in enumerate(y_columns):
+        label = custom_labels[idx] if custom_labels and idx < len(custom_labels) else y_column
+        plt.plot(data[x_column], data[y_column], marker='o', linestyle='-', label=label)
+
     if x_log_scale:
         plt.xscale('log')
     if y_log_scale:
@@ -30,16 +31,14 @@ def plot_graph(data, x_column, y_column, x_log_scale, y_log_scale, x_range, y_ra
         plt.ylim(y_range)
 
     plt.xlabel(x_column)
-    plt.ylabel(y_column)
-    plt.title(f'Plot of {y_column} vs {x_column}')
+    plt.ylabel("Y Values")
+    plt.title(f'Multiple Curves: Y vs {x_column}')
     plt.grid(True)
+    plt.legend()
     plt.tight_layout()
     st.pyplot(plt)
 
 def is_probably_log(column_data):
-    # Simple heuristic: if all > 0 and max < ~10 and min > -10 (typical for log10 values),
-    # and not too many zeros or negatives, treat as log scale.
-    # You can improve this function if needed.
     col = np.array(column_data)
     if np.any(col <= 0):
         return False
@@ -102,22 +101,23 @@ def linegraph():
                 x_range_max = st.number_input(f"X-axis {x_column} max", value=float(data[x_column].max()), format="%.10e")
 
             with col2:
-                y_column = st.selectbox("Select Y-axis column", columns, index=1)
-                y_log_detected = is_probably_log(data[y_column])
+                y_columns = st.multiselect("Select Y-axis columns", columns, default=[columns[1]])
+                custom_labels_input = st.text_input("Enter custom legends (comma-separated, optional)", "")
+                custom_labels = [label.strip() for label in custom_labels_input.split(",")] if custom_labels_input else []
+                y_log_detected = all([is_probably_log(data[col]) for col in y_columns])
                 y_log_scale = st.checkbox("Log scale for Y-axis", value=y_log_detected)
-                y_range_min = st.number_input(f"Y-axis {y_column} min", value=float(data[y_column].min()), format="%.10e")
-                y_range_max = st.number_input(f"Y-axis {y_column} max", value=float(data[y_column].max()), format="%.10e")
+                y_range_min = st.number_input("Y-axis min", value=float(data[y_columns[0]].min()), format="%.10e")
+                y_range_max = st.number_input("Y-axis max", value=float(data[y_columns[0]].max()), format="%.10e")
 
             if st.button("Plot Graph"):
                 x_range = (x_range_min, x_range_max)
                 y_range = (y_range_min, y_range_max)
-                plot_graph(data, x_column, y_column, x_log_scale, y_log_scale, x_range, y_range)
+                plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range)
 
             # ---------------- Integration Section ----------------
             st.subheader("🔢 Integration")
             st.write("Estimate area under the curve.")
 
-            # Show detected info and option to override
             st.markdown(f"**Log detection:** X-axis: {x_log_detected}, Y-axis: {y_log_detected}")
             override_log_x = st.checkbox("Override: X-axis data is in log scale", value=x_log_scale)
             override_log_y = st.checkbox("Override: Y-axis data is in log scale", value=y_log_scale)
@@ -125,18 +125,21 @@ def linegraph():
             method = st.selectbox("Integration Method", ["trapezoid", "Simpson 1/3", "Simpson 3/8"])
 
             if st.button("➕ Calculate Integral"):
-                x_vals = data[x_column].values
-                y_vals = data[y_column].values
-                result = integrate_curve(
-                    x_vals, y_vals,
-                    log_x=override_log_x,
-                    log_y=override_log_y,
-                    method=method
-                )
-                if isinstance(result, str) and result.startswith("❌"):
-                    st.error(result)
+                if len(y_columns) != 1:
+                    st.warning("Please select only one Y-axis column for integration.")
                 else:
-                    st.success(f"Estimated integral using {method} rule: {result:E}")
+                    x_vals = data[x_column].values
+                    y_vals = data[y_columns[0]].values
+                    result = integrate_curve(
+                        x_vals, y_vals,
+                        log_x=override_log_x,
+                        log_y=override_log_y,
+                        method=method
+                    )
+                    if isinstance(result, str) and result.startswith("❌"):
+                        st.error(result)
+                    else:
+                        st.success(f"Estimated integral using {method} rule: {result:E}")
             # ------------------------------------------------------
 
 def plot_pie_chart():
@@ -165,6 +168,7 @@ elif choice == "Pie Chart":
     plot_pie_chart()
 
 # Sidebar info
-st.sidebar.info("version 2")
+st.sidebar.info("version 3")
 st.sidebar.write("version 2: added pie chart")
 st.sidebar.write("version 2: added advanced integration options")
+st.sidebar.write("version 3: added support for multiple Y-axis curves and custom legends")
