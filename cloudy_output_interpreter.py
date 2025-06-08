@@ -11,33 +11,45 @@ from io import StringIO
 def extract_cloudy_data(file_content):
     wavelengths = []
     luminosities = []
-    labels = []  
+    labels = []
     warnings = []
-    all_lines = file_content.splitlines()
 
-    for i, line in enumerate(all_lines):
-        match = re.search(r"([\w\s]+)\s+([\d.]+)(A|m)\s+([\d.]+)\s+([\d.]+)", line)
-        if match:
-            unit = match.group(3)
-            if unit== "A": #angstrom
-                label = match.group(1).strip()  
-                wavelength = float(match.group(2)) 
-                luminosity = float(match.group(4)) 
-                labels.append(label)
-                wavelengths.append(wavelength)
-                luminosities.append(luminosity)
-                
-            elif unit== "m":#micron
-                label = match.group(1).strip()  
-                wavelength = 1e-4*float(match.group(2))  
-                luminosity = float(match.group(4)) 
-                labels.append(label)
-                wavelengths.append(wavelength)
-                luminosities.append(luminosity)
+    # Combine all lines into one token list
+    tokens = file_content.split()
+
+    i = 0
+    while i < len(tokens) - 3:
+        # Look for a pattern: numeric + unit + numeric
+        if re.match(r"^[\d.]+$", tokens[i]) and tokens[i+1] in ("A", "m") and re.match(r"^[\d.+\-eE]+$", tokens[i+2]):
+            # This means tokens[i-1] and possibly earlier are the label
+            # Backtrack to find where the label started
+            label_start = i - 1
+            while label_start > 0 and not re.match(r"^[\d.]+$", tokens[label_start - 1]):
+                label_start -= 1
+
+            label = " ".join(tokens[label_start:i])
+            wavelength = float(tokens[i])
+            unit = tokens[i+1]
+            luminosity = float(tokens[i+2])
+
+            # Convert micron to Angstrom if needed
+            if unit == "A":
+                wavelength_A = wavelength
+            else:  # unit == "m"
+                wavelength_A = wavelength * 1e4
+
+            labels.append(label.strip())
+            wavelengths.append(wavelength_A)
+            luminosities.append(luminosity)
+
+            i += 3  # move to next possible entry
         else:
-            if any(keyword in line.lower() for keyword in ["warning","cautions"]):#, "note", "luminosities", "pressure", "density"]):
-                warnings.append(line.strip())
-    emission_lines={"labels" :labels,"wavelengths (A)":wavelengths,"luminosity (erg/s)":luminosities}
+            i += 1
+
+    # Warnings (only scanned line by line, still works)
+    for line in file_content.splitlines():
+        if any(keyword in line.lower() for keyword in ["warning", "caution"]):
+            warnings.append(line.strip())
 
     return wavelengths, luminosities, labels, warnings
 
