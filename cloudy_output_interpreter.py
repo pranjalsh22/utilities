@@ -8,6 +8,8 @@ from io import StringIO
 
 # Function to extract line luminosities and other relevant results
 
+import re
+
 def extract_cloudy_data(file_content):
     wavelengths = []
     luminosities = []
