@@ -14,8 +14,11 @@ def extract_cloudy_data(file_content):
     labels = []
     warnings = []
 
-    # Normalize all whitespace: tabs, multiple spaces, newlines -> single space
-    normalized = re.sub(r'\s+', ' ', file_content)
+ # 1. Remove all dotted phrases like "continua...........", "line..........."
+    cleaned = re.sub(r'\b\w+\.*\.+\s*', ' ', file_content)
+
+    # 2. Normalize all whitespace (space, tabs, newlines) to a single space
+    normalized = re.sub(r'\s+', ' ', cleaned)
 
     # Updated regex to handle labels like "he 2", "C 3", "[Fe X]"
     pattern = re.compile(r'([A-Za-z0-9\[\]\+\-\/\.\(\) ]+?)\s+([\d.]+)(A|m)\s+([\d.]+)\s+([\d.]+)')
