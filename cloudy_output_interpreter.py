@@ -17,8 +17,8 @@ def extract_cloudy_data(file_content):
     # Normalize all whitespace: tabs, multiple spaces, newlines -> single space
     normalized = re.sub(r'\s+', ' ', file_content)
 
-    # Match patterns like: Label 386A 199 299 or Label 3.5m 123 456
-    pattern = re.compile(r'([\w\/\+\-\.\(\)]+)\s+([\d.]+)(A|m)\s+([\d.]+)\s+([\d.]+)')
+    # Updated regex to handle labels like "he 2", "C 3", "[Fe X]"
+    pattern = re.compile(r'([A-Za-z0-9\[\]\+\-\/\.\(\) ]+?)\s+([\d.]+)(A|m)\s+([\d.]+)\s+([\d.]+)')
 
     matches = pattern.findall(normalized)
 
@@ -35,12 +35,12 @@ def extract_cloudy_data(file_content):
         except ValueError:
             continue
 
-    # Now extract warnings separately line-by-line
     for line in file_content.splitlines():
         if any(keyword in line.lower() for keyword in ["warning", "caution"]):
             warnings.append(line.strip())
 
     return wavelengths, luminosities, labels, warnings
+
 
 def final_iteration_content(content):
     final_iter_match = re.search(r'Cloudy ends:.*?(\d+)\s+iterations?', content)
