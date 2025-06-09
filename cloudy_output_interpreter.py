@@ -15,7 +15,8 @@ def extract_cloudy_data(file_content):
     warnings = []
 
  # 1. Remove all dotted phrases like "continua...........", "line..........."
-    cleaned = re.sub(r'\b\w+\.*\.+\s*', ' ', file_content)
+    cleaned = re.sub(r'\b\w+\.\.+\s*', ' ', file_content)
+
 
     # 2. Normalize all whitespace (space, tabs, newlines) to a single space
     normalized = re.sub(r'\s+', ' ', cleaned)
