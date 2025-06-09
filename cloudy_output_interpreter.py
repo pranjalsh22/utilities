@@ -8,47 +8,34 @@ from io import StringIO
 
 # Function to extract line luminosities and other relevant results
 
-import re
-
 def extract_cloudy_data(file_content):
     wavelengths = []
     luminosities = []
     labels = []
     warnings = []
 
-    # Combine all lines into one token list
-    tokens = file_content.split()
+    # Normalize all whitespace: tabs, multiple spaces, newlines -> single space
+    normalized = re.sub(r'\s+', ' ', file_content)
 
-    i = 0
-    while i < len(tokens) - 3:
-        # Look for a pattern: numeric + unit + numeric
-        if re.match(r"^[\d.]+$", tokens[i]) and tokens[i+1] in ("A", "m") and re.match(r"^[\d.+\-eE]+$", tokens[i+2]):
-            # This means tokens[i-1] and possibly earlier are the label
-            # Backtrack to find where the label started
-            label_start = i - 1
-            while label_start > 0 and not re.match(r"^[\d.]+$", tokens[label_start - 1]):
-                label_start -= 1
+    # Match patterns like: Label 386A 199 299 or Label 3.5m 123 456
+    pattern = re.compile(r'([\w\/\+\-\.\(\)]+)\s+([\d.]+)(A|m)\s+([\d.]+)\s+([\d.]+)')
 
-            label = " ".join(tokens[label_start:i])
-            wavelength = float(tokens[i])
-            unit = tokens[i+1]
-            luminosity = float(tokens[i+2])
+    matches = pattern.findall(normalized)
 
-            # Convert micron to Angstrom if needed
-            if unit == "A":
-                wavelength_A = wavelength
-            else:  # unit == "m"
-                wavelength_A = wavelength * 1e4
-
+    for match in matches:
+        label, value, unit, lum1, lum2 = match
+        try:
+            wavelength = float(value)
+            luminosity = float(lum1)
+            if unit == "m":
+                wavelength *= 1e4  # convert microns to angstroms
             labels.append(label.strip())
-            wavelengths.append(wavelength_A)
+            wavelengths.append(wavelength)
             luminosities.append(luminosity)
+        except ValueError:
+            continue
 
-            i += 3  # move to next possible entry
-        else:
-            i += 1
-
-    # Warnings (only scanned line by line, still works)
+    # Now extract warnings separately line-by-line
     for line in file_content.splitlines():
         if any(keyword in line.lower() for keyword in ["warning", "caution"]):
             warnings.append(line.strip())
