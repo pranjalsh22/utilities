@@ -21,7 +21,7 @@ def extract_cloudy_data(file_content):
     normalized = re.sub(r'\s+', ' ', cleaned)
 
     # Updated regex to handle labels like "he 2", "C 3", "[Fe X]"
-    pattern = re.compile(r"([\w\s]+)\s+([\d.]+)(?=A|m)(A|m)\s+([\d.eE+-]+)\s+([\d.eE+-]+)")
+    pattern = re.compile(r"([\w\s]+?)\s+([\d.]+)(A|m)\s+([\d.eE+-]+)\s+([\d.eE+-]+)")
 
     matches = pattern.findall(normalized)
 
