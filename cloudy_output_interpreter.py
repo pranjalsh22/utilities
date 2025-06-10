@@ -100,6 +100,7 @@ if uploaded_file:
 
     # Filter by wavelength, not label
     main_data = line_data[line_data["Wavelength(Å)"].isin(main_wavelengths)]
+    st.dataframe(main_data,use_container_width=True)
 
     if not main_data.empty:
         fig, ax = plt.subplots(figsize=(8, 4))
