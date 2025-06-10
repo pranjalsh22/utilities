@@ -1,4 +1,4 @@
-#version5
+#version6
 import re
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -102,16 +102,17 @@ if uploaded_file:
 
 #--------------------GRAPH 1: ONLY MAIN LINES------------------------------
     st.subheader("Main Emission Lines Only")
+    main_wavelengths = [4363,4958.91,5007]  # example wavelengths in Å
 
-    main_lines_lower = [ml.lower() for ml in main_lines]
-    main_data = line_data[line_data["Label"].str.lower().isin(main_lines_lower)]
+    # Filter by wavelength, not label
+    main_data = line_data[line_data["Wavelength(Å)"].isin(main_wavelengths)]
 
     if not main_data.empty:
         fig, ax = plt.subplots(figsize=(8, 4))
         ax.bar(
             main_data["Wavelength(Å)"],
             main_data["luminosity(erg/s)"],
-            width=5.0,  # Slightly wider bars for visibility
+            width=5.0,
             color="green",
             edgecolor="black",
             linewidth=0.3,
@@ -127,21 +128,23 @@ if uploaded_file:
         ax.set_xlabel("Wavelength (Å)", fontsize=14)
         ax.set_ylabel("Log(luminosity) [erg/s]", fontsize=14)
         ax.set_ylim(bottom=0)
+
         # User input for custom X-axis range
         st.subheader("Set X-Axis Range for Main Emission Line Plot")
         col1, col2 = st.columns(2)
 
         with col1:
-            min_x = st.number_input("Minimum Wavelength (Å)", value=int(min(wavelengths)))
+            min_x = st.number_input("Minimum Wavelength (Å)", value=4200)#int(min(main_data["Wavelength(Å)"])))
 
         with col2:
-            max_x = st.number_input("Maximum Wavelength (Å)", value=int(max(wavelengths)))
+            max_x = st.number_input("Maximum Wavelength (Å)", value=5100)#int(max(main_data["Wavelength(Å)"])))
 
-        ax.set_xlim(min_x,max_x)
+        ax.set_xlim(min_x, max_x)
         ax.grid(axis="y", linestyle="--", alpha=0.6)
         st.pyplot(fig)
     else:
         st.write("No main emission lines found in the data.")
+
 
 #--------------------GRAPH 2:FILTERED GRAPH------------------------------
     # Display the emission lines in a scrollable box
