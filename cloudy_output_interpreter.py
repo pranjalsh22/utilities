@@ -19,6 +19,8 @@ def extract_cloudy_data(file_content):
 
     matches = pattern.findall(normalized)
 
+
+    
     for match in matches:
         label, value, unit, lum1, lum2 = match
         try:
@@ -42,16 +44,21 @@ def find_warnings(file_content):
     return warnings
 
 def final_iteration_content(content):
+    #st.text_area(content)
     final_iter_match = re.search(r'Cloudy ends:.*?(\d+)\s+iterations?', content)
+    st.info(f"Number of iterations:{final_iter_match[1]}")
     if final_iter_match:
         final_iteration = int(final_iter_match.group(1))
         iteration_pattern = fr'iteration\s+{final_iteration}\b'
         iter_match = list(re.finditer(iteration_pattern, content, re.IGNORECASE))
         if iter_match:
-            match = re.search(r'iteration\s+6', content, re.IGNORECASE)
+            
+            match = re.search(fr'iteration\s+{final_iteration}', content, re.IGNORECASE)
             if match:
+                
                 # Slice content starting after 'iteration 6'
                 content_after = content[match.end():]
+                
                 return content_after
         else:
             st.write(f"'content of iteration {final_iteration}' not found in file.")
@@ -59,13 +66,16 @@ def final_iteration_content(content):
         st.write("Could not find final iteration in 'Cloudy ends' line.")
 
 def extract_emergent_lines(content):
-    pattern = r"Emergent line intensities\s+general properties\.{5,}"
-    match = re.search(pattern, content, re.IGNORECASE)
-    if match:
-        return content[match.end():]  # Return everything after the header
+    if content==None:
+        st.warning("No data passed into extract_emergent_lines() ")
     else:
-        st.warning("Could not find 'Emergent line intensities' block.")
-        return ""
+        pattern = r"Emergent line intensities"
+        match = re.search(pattern, content, re.IGNORECASE)
+        if match:
+            return content[match.end():]  # Return everything after the header
+        else:
+            st.warning("Could not find 'Emergent line intensities' block.")
+            return ""
 
 #-----------------------------APP START--------------------------------------------
 st.title("Cloudy Output File Processor")
@@ -97,11 +107,10 @@ if uploaded_file:
 #--------------------GRAPH 1: ONLY MAIN LINES------------------------------
     st.subheader("Main Emission Lines Only")
     main_wavelengths = [4363,4958.91,5007]  # example wavelengths in Å
-
-    # Filter by wavelength, not label
+    st.write(f"looking for wavelengths(Å) :{main_wavelengths}")
     main_data = line_data[line_data["Wavelength(Å)"].isin(main_wavelengths)]
     st.dataframe(main_data,use_container_width=True)
-
+    
     if not main_data.empty:
         fig, ax = plt.subplots(figsize=(8, 4))
         ax.bar(
@@ -240,9 +249,9 @@ if uploaded_file:
         label_clean = label.strip().lower()
         if any(tag in label_clean for tag in main_lines):
             ax.text(wl, lum + 0.1, label, fontsize=9, color="red")
+
     if st.checkbox("log scale x axis",value=True):
         ax.set_xscale('log')
-
     ax.set_title("Full Emission Line luminosities", fontsize=16)
     ax.set_xlabel("Wavelength (Å)", fontsize=14)
     ax.set_ylabel("Log(luminosity) [erg/s]", fontsize=14)
