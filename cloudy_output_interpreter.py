@@ -6,22 +6,15 @@ import streamlit as st
 from io import StringIO
 #-------------------- USER DEFINED FUNCTIONS---------------------------------------------
 
-# Function to extract line luminosities and other relevant results
-
 def extract_cloudy_data(file_content):
     wavelengths = []
     luminosities = []
     labels = []
-    warnings = []
 
- # 1. Remove all dotted phrases like "continua...........", "line..........."
     cleaned = re.sub(r'\b\w+\.\.+\s*', ' ', file_content)
 
-
-    # 2. Normalize all whitespace (space, tabs, newlines) to a single space
     normalized = re.sub(r'\s+', ' ', cleaned)
 
-    # Updated regex to handle labels like "he 2", "C 3", "[Fe X]"
     pattern = re.compile(r"([\w\s]+?)\s+([\d.]+)(A|m)\s+([\d.eE+-]+)\s+([\d.eE+-]+)")
 
     matches = pattern.findall(normalized)
@@ -39,12 +32,14 @@ def extract_cloudy_data(file_content):
         except ValueError:
             continue
 
+    return wavelengths, luminosities, labels
+
+def find_warnings(file_content):
+    warnings=[]
     for line in file_content.splitlines():
         if any(keyword in line.lower() for keyword in ["warning", "caution"]):
             warnings.append(line.strip())
-
-    return wavelengths, luminosities, labels, warnings
-
+    return warnings
 
 def final_iteration_content(content):
     final_iter_match = re.search(r'Cloudy ends:.*?(\d+)\s+iterations?', content)
@@ -63,8 +58,6 @@ def final_iteration_content(content):
     else:
         st.write("Could not find final iteration in 'Cloudy ends' line.")
 
-
-
 def extract_emergent_lines(content):
     pattern = r"Emergent line intensities\s+general properties\.{5,}"
     match = re.search(pattern, content, re.IGNORECASE)
@@ -74,7 +67,7 @@ def extract_emergent_lines(content):
         st.warning("Could not find 'Emergent line intensities' block.")
         return ""
 
-#-------------------------------------------------------------------------
+#-----------------------------APP START--------------------------------------------
 st.title("Cloudy Output File Processor")
 st.write("Upload a Cloudy output file to extract and visualize line luminosities, and explore other results.")
 
@@ -84,9 +77,10 @@ main_lines=["o 3","o3bn"]
 
 if uploaded_file:
     file_content = StringIO(uploaded_file.getvalue().decode("utf-8")).read()
+    warnings=find_warnings(file_content)
     content1=final_iteration_content(file_content)
     content=extract_emergent_lines(content1)
-    wavelengths, luminosities, labels,warnings= extract_cloudy_data(content)
+    wavelengths, luminosities, labels= extract_cloudy_data(content)
     # Create a DataFrame for the line data
     line_data = pd.DataFrame({
         "Label": labels,
@@ -98,7 +92,7 @@ if uploaded_file:
     st.write("### Total Emission Lines Extracted:", len(wavelengths))
     if st.checkbox("see warnings"):
         st.write("### Warnings:")
-        st.write("\n".join(warnings) if warnings else "No additional results found.")
+        st.write("\n \n".join(warnings) if warnings else "No additional results found.")
 
 #--------------------GRAPH 1: ONLY MAIN LINES------------------------------
     st.subheader("Main Emission Lines Only")
