@@ -240,7 +240,8 @@ if uploaded_file:
         label_clean = label.strip().lower()
         if any(tag in label_clean for tag in main_lines):
             ax.text(wl, lum + 0.1, label, fontsize=9, color="red")
-
+    if st.checkbox("log scale x axis",value=True):
+        ax.set_xscale('log')
 
     ax.set_title("Full Emission Line luminosities", fontsize=16)
     ax.set_xlabel("Wavelength (Å)", fontsize=14)
