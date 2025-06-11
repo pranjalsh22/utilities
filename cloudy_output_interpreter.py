@@ -106,7 +106,7 @@ if uploaded_file:
 
 #--------------------GRAPH 1: ONLY MAIN LINES------------------------------
     st.subheader("Main Emission Lines Only")
-    main_wavelengths = [4363,4958.91,5007,5006.84]  # example wavelengths in Å
+    main_wavelengths = [4363,4958.91,5006.84]  # example wavelengths in Å
     st.write(f"looking for wavelengths(Å) :{main_wavelengths}")
     main_data = line_data[line_data["Wavelength(Å)"].isin(main_wavelengths)]
     st.dataframe(main_data,use_container_width=True)
