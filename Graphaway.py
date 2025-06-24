@@ -3,7 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import simpson, trapezoid
-from matplotlib.lines import Line2D
 
 def read_file(uploaded_file):
     try:
@@ -15,30 +14,44 @@ def read_file(uploaded_file):
         st.error("Unsupported file format. Please upload a valid CSV file with tabular data (comma or space-separated).")
         return None
 
-def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range,
-               graph_title, style_map, color_map, x_label, y_label):
+def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, 
+               color_labels, pattern_labels, x_log_scale, y_log_scale, x_range, y_range, 
+               title, x_label, y_label):
+    
     plt.figure(figsize=(10, 6))
+    
+    # Define line styles mapping for patterns
+    pattern_styles = {
+        'solid': '-',
+        'dotted': ':',
+        'dashed': '--',
+        'dashdot': '-.'
+    }
 
-    # Reverse maps for legend creation
-    color_groups = {}
-    for y_col, c_info in color_map.items():
-        color_groups.setdefault(c_info['label'], set()).add(y_col)
+    # Flatten all y_columns from both groups for quick access
+    all_y_cols = []
+    for cols in color_groups + pattern_groups:
+        all_y_cols.extend(cols)
+    all_y_cols = list(dict.fromkeys(all_y_cols))  # remove duplicates if any
 
-    style_groups = {}
-    for y_col, style_info in style_map.items():
-        style_groups.setdefault(style_info['label'], style_info['style'])
+    # Plot by colors (all with solid line)
+    for idx, group in enumerate(color_groups):
+        color = plt.cm.tab10(idx % 10)
+        label = color_labels[idx] if color_labels and idx < len(color_labels) else f"Color group {idx+1}"
+        for col in group:
+            plt.plot(data[x_column], data[col], marker='o', linestyle='-', color=color, label=label)
+    
+    # Plot by patterns (all with black color)
+    for idx, group in enumerate(pattern_groups):
+        linestyle = pattern_styles.get(pattern_labels[idx][1], '-') if pattern_labels and idx < len(pattern_labels) else '-'
+        pattern_label = pattern_labels[idx][0] if pattern_labels and idx < len(pattern_labels) else f"Pattern group {idx+1}"
+        for col in group:
+            plt.plot(data[x_column], data[col], marker='o', linestyle=linestyle, color='black', label=pattern_label)
 
-    # Plot each line with color and style
-    for y_col in y_columns:
-        # Get color & label
-        c = color_map[y_col]['color'] if y_col in color_map else None
-        c_label = color_map[y_col]['label'] if y_col in color_map else y_col
-        # Get style & label
-        ls = style_map[y_col]['style'] if y_col in style_map else '-'
-        ls_label = style_map[y_col]['label'] if y_col in style_map else 'Solid'
-
-        # Plot line with label = None (we'll create custom legends)
-        plt.plot(data[x_column], data[y_col], marker='o', linestyle=ls, color=c, label=None)
+    # To avoid duplicate legends:
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys(), title="Legend")
 
     if x_log_scale:
         plt.xscale('log')
@@ -49,25 +62,10 @@ def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scal
     if y_range:
         plt.ylim(y_range)
 
+    plt.title(title)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
-    plt.title(graph_title)
     plt.grid(True)
-
-    # Create custom legend for colors
-    color_legend_handles = [
-        Line2D([0], [0], color=next(iter([v['color'] for k,v in color_map.items() if color_map[k]['label']==label])), lw=2)
-        for label in color_groups
-    ]
-    plt.legend(color_legend_handles, list(color_groups.keys()), title="Color Groups", loc='upper left')
-
-    # Create custom legend for line styles
-    style_legend_handles = [
-        Line2D([0], [0], color='black', lw=2, linestyle=style_groups[label])
-        for label in style_groups
-    ]
-    plt.legend(style_legend_handles, list(style_groups.keys()), title="Line Style Groups", loc='upper right')
-
     plt.tight_layout()
     st.pyplot(plt)
 
@@ -134,90 +132,61 @@ def linegraph():
                 x_range_max = st.number_input(f"X-axis {x_column} max", value=float(data[x_column].max()), format="%.10e")
 
             with col2:
-                y_columns = st.multiselect("Select Y-axis columns", columns, default=[columns[1]])
+                y_columns = st.multiselect("Select Y-axis columns (all will be plotted)", columns, default=[columns[1]])
+                # ----------- Grouping for colors -----------
+                st.markdown("### Color Groups (each group same color, solid lines)")
+                color_groups_input = st.text_area(
+                    "Enter groups of Y columns separated by semicolons (e.g. col1,col2; col3,col4)",
+                    value=f"{','.join(y_columns)}"
+                )
+                color_labels_input = st.text_input("Enter labels for color groups (comma-separated)", "")
 
-            st.subheader("Color Grouping (Multiple Y columns per color group)")
-            st.write("Select one or more Y-axis columns per color group and provide a label for that group.")
+                color_groups = [grp.strip().split(",") for grp in color_groups_input.split(";") if grp.strip()]
+                color_labels = [label.strip() for label in color_labels_input.split(",")] if color_labels_input else []
 
-            color_groups = {}
-            used_columns_color = set()
-            max_color_groups = 5
-            for i in range(max_color_groups):
-                cols = st.multiselect(f"Color Group {i+1} - Select Y columns", [col for col in y_columns if col not in used_columns_color])
-                label = st.text_input(f"Color Group {i+1} Label", key=f"color_label_{i}")
-                if cols and label:
-                    for c in cols:
-                        used_columns_color.add(c)
-                    color_groups[label] = cols
+                # ----------- Grouping for patterns -----------
+                st.markdown("### Pattern Groups (all black color, different line styles)")
+                st.markdown("Available patterns: solid, dotted, dashed, dashdot")
+                pattern_groups_input = st.text_area(
+                    "Enter groups of Y columns separated by semicolons (e.g. col1,col2; col3)",
+                    value=""
+                )
+                pattern_labels_input = st.text_area(
+                    "Enter pattern labels and types separated by semicolons, format: label|pattern\n(e.g. Group A|dashed; Group B|dotted)",
+                    value=""
+                )
 
-            # Assign colors for each group
-            base_colors = plt.cm.get_cmap('tab10').colors
-            color_map = {}
-            for idx, (label, cols) in enumerate(color_groups.items()):
-                col_color = base_colors[idx % len(base_colors)]
-                for c in cols:
-                    color_map[c] = {'color': col_color, 'label': label}
-
-            # For columns not assigned to color groups, assign unique colors
-            for c in y_columns:
-                if c not in color_map:
-                    idx = len(color_map)
-                    col_color = base_colors[idx % len(base_colors)]
-                    color_map[c] = {'color': col_color, 'label': c}
-
-            st.subheader("Line Style Grouping (Multiple Y columns per style group)")
-            st.write("Select one or more Y-axis columns per line style group and provide a label for that group.")
-
-            # Available line styles
-            available_styles = ['-', '--', '-.', ':']
-            style_names = ['Solid', 'Dashed', 'Dash-dot', 'Dotted']
-
-            style_groups = {}
-            used_columns_style = set()
-            max_style_groups = 4
-            for i in range(max_style_groups):
-                cols = st.multiselect(f"Style Group {i+1} - Select Y columns", [col for col in y_columns if col not in used_columns_style])
-                label = st.text_input(f"Style Group {i+1} Label", key=f"style_label_{i}")
-                if cols and label:
-                    for c in cols:
-                        used_columns_style.add(c)
-                    style_groups[label] = {'columns': cols, 'style': available_styles[i % len(available_styles)]}
-
-            style_map = {}
-            for label, group_info in style_groups.items():
-                for c in group_info['columns']:
-                    style_map[c] = {'style': group_info['style'], 'label': label}
-
-            # Assign solid style for columns not in any style group
-            for c in y_columns:
-                if c not in style_map:
-                    style_map[c] = {'style': '-', 'label': 'Solid'}
-
-            custom_labels_input = st.text_input("Enter custom legends for Y lines (comma-separated, optional)", "")
-            custom_labels = [label.strip() for label in custom_labels_input.split(",")] if custom_labels_input else []
-
-            y_log_detected = all([is_probably_log(data[col]) for col in y_columns])
-            y_log_scale = st.checkbox("Log scale for Y-axis", value=y_log_detected)
-            y_range_min = st.number_input("Y-axis min", value=float(data[y_columns[0]].min()) if y_columns else 0.0, format="%.10e")
-            y_range_max = st.number_input("Y-axis max", value=float(data[y_columns[0]].max()) if y_columns else 1.0, format="%.10e")
-
-            graph_title = st.text_input("Enter Graph Title", f"Multiple Curves: Y vs {x_column}")
-            x_axis_label = st.text_input("X-axis Label", x_column)
-            y_axis_label = st.text_input("Y-axis Label", "Y Values")
+                pattern_groups = [grp.strip().split(",") for grp in pattern_groups_input.split(";") if grp.strip()]
+                pattern_labels = []
+                if pattern_labels_input:
+                    for item in pattern_labels_input.split(";"):
+                        if "|" in item:
+                            label, pattern = item.split("|", 1)
+                            pattern_labels.append((label.strip(), pattern.strip()))
+                
+                # ---------------- Graph Title and Axis Labels ---------------
+                st.markdown("### Graph Title and Axis Labels")
+                title = st.text_input("Graph Title", value=f'Multiple Curves: Y vs {x_column}')
+                x_axis_label = st.text_input("X-axis Label", value=x_column)
+                y_axis_label = st.text_input("Y-axis Label", value="Y Values")
 
             if st.button("Plot Line Graph"):
                 x_range = (x_range_min, x_range_max)
                 y_range = (y_range_min, y_range_max)
-                plot_graph(data, x_column, y_columns, custom_labels,
-                           x_log_scale, y_log_scale, x_range, y_range,
-                           graph_title, style_map, color_map,
-                           x_axis_label, y_axis_label)
+                plot_graph(
+                    data, x_column, y_columns,
+                    color_groups, pattern_groups,
+                    color_labels, pattern_labels,
+                    x_log_scale, y_log_scale,
+                    x_range, y_range,
+                    title, x_axis_label, y_axis_label
+                )
 
             # ---------------- Integration Section ----------------
             st.subheader("🔢 Integration")
             st.write("Estimate area under the curve.")
 
-            st.markdown(f"**Log detection:** X-axis: {x_log_detected}, Y-axis: {y_log_detected}")
+            st.markdown(f"**Log detection:** X-axis: {x_log_detected}, Y-axis: {x_log_detected}")
             override_log_x = st.checkbox("Override: X-axis data is in log scale", value=x_log_scale)
             override_log_y = st.checkbox("Override: Y-axis data is in log scale", value=y_log_scale)
 
@@ -239,6 +208,7 @@ def linegraph():
                         st.error(result)
                     else:
                         st.success(f"Estimated integral using {method} rule: {result:E}")
+            # ------------------------------------------------------
 
 def plot_pie_chart():
     st.title("Pie Chart Visualization")
