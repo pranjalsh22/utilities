@@ -28,12 +28,6 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups,
         'dashdot': '-.'
     }
 
-    # Flatten all y_columns from both groups for quick access
-    all_y_cols = []
-    for cols in color_groups + pattern_groups:
-        all_y_cols.extend(cols)
-    all_y_cols = list(dict.fromkeys(all_y_cols))  # remove duplicates if any
-
     # Plot by colors (all with solid line)
     for idx, group in enumerate(color_groups):
         color = plt.cm.tab10(idx % 10)
@@ -122,10 +116,16 @@ def linegraph():
             st.write(display_data)
             columns = data.columns.tolist()
 
+            # Sidebar inputs for title and axis labels
+            st.sidebar.header("Graph Title and Axis Labels")
+            x_column = st.sidebar.selectbox("Select X-axis column", columns)
+            title = st.sidebar.text_input("Graph Title", value=f'Multiple Curves: Y vs {x_column}')
+            x_axis_label = st.sidebar.text_input("X-axis Label", value=x_column)
+            y_axis_label = st.sidebar.text_input("Y-axis Label", value="Y Values")
+
             col1, col2 = st.columns(2)
 
             with col1:
-                x_column = st.selectbox("Select X-axis column", columns)
                 x_log_detected = is_probably_log(data[x_column])
                 x_log_scale = st.checkbox("Log scale for X-axis", value=x_log_detected)
                 x_range_min = st.number_input(f"X-axis {x_column} min", value=float(data[x_column].min()), format="%.10e")
@@ -163,12 +163,11 @@ def linegraph():
                         if "|" in item:
                             label, pattern = item.split("|", 1)
                             pattern_labels.append((label.strip(), pattern.strip()))
-                
-                # ---------------- Graph Title and Axis Labels ---------------
-                st.markdown("### Graph Title and Axis Labels")
-                title = st.text_input("Graph Title", value=f'Multiple Curves: Y vs {x_column}')
-                x_axis_label = st.text_input("X-axis Label", value=x_column)
-                y_axis_label = st.text_input("Y-axis Label", value="Y Values")
+            
+                y_log_detected = all([is_probably_log(data[col]) for col in y_columns])
+                y_log_scale = st.checkbox("Log scale for Y-axis", value=y_log_detected)
+                y_range_min = st.number_input("Y-axis min", value=float(data[y_columns[0]].min()), format="%.10e")
+                y_range_max = st.number_input("Y-axis max", value=float(data[y_columns[0]].max()), format="%.10e")
 
             if st.button("Plot Line Graph"):
                 x_range = (x_range_min, x_range_max)
@@ -186,7 +185,7 @@ def linegraph():
             st.subheader("🔢 Integration")
             st.write("Estimate area under the curve.")
 
-            st.markdown(f"**Log detection:** X-axis: {x_log_detected}, Y-axis: {x_log_detected}")
+            st.markdown(f"**Log detection:** X-axis: {x_log_detected}, Y-axis: {y_log_detected}")
             override_log_x = st.checkbox("Override: X-axis data is in log scale", value=x_log_scale)
             override_log_y = st.checkbox("Override: Y-axis data is in log scale", value=y_log_scale)
 
@@ -246,25 +245,4 @@ def plot_bar_chart():
             use_labels = st.checkbox("Use custom labels from a column?")
             if use_labels:
                 label_column = st.selectbox("Select column for labels", columns)
-                labels = data[label_column].astype(str)
-            else:
-                labels = data[x_column].astype(str)
-
-            fig, ax = plt.subplots()
-            ax.bar(labels, data[y_column])
-            ax.set_xlabel(x_column)
-            ax.set_ylabel(y_column)
-            ax.set_title(f'Bar Chart of {y_column} vs {x_column}')
-            plt.xticks(rotation=45)
-            plt.tight_layout()
-            st.pyplot(fig)
-
-# ---------------- Main App ------------------
-choice = st.selectbox("Choose a graph type", ["Line Graph", "Pie Chart", "Bar Graph"])
-
-if choice == "Line Graph":
-    linegraph()
-elif choice == "Pie Chart":
-    plot_pie_chart()
-elif choice == "Bar Graph":
-    plot_bar_chart()
+                labels = data[label_column
