@@ -20,6 +20,7 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups,
     
     plt.figure(figsize=(10, 6))
     
+    # Line style options
     pattern_styles = {
         'solid': '-',
         'dotted': ':',
@@ -27,22 +28,40 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups,
         'dashdot': '-.'
     }
 
+    used_labels = set()
+    color_idx = 0
+
+    # Plot color groups
     for idx, group in enumerate(color_groups):
-        color = plt.cm.tab10(idx % 10)
+        color = plt.cm.tab10(color_idx % 10)
+        color_idx += 1
         label = color_labels[idx] if color_labels and idx < len(color_labels) else f"Color group {idx+1}"
         for col in group:
-            plt.plot(data[x_column], data[col], marker='o', linestyle='-', color=color, label=label)
+            if label not in used_labels:
+                plt.plot(data[x_column], data[col], marker='o', linestyle='-', color=color, label=label)
+                used_labels.add(label)
+            else:
+                plt.plot(data[x_column], data[col], marker='o', linestyle='-', color=color)
 
+    # Plot pattern groups with same color logic but styled lines
     for idx, group in enumerate(pattern_groups):
+        linestyle = '-'
+        pattern_label = f"Pattern group {idx+1}"
         if pattern_labels and idx < len(pattern_labels):
             pattern_label, pattern_style_key = pattern_labels[idx]
             linestyle = pattern_styles.get(pattern_style_key, '-')
-        else:
-            pattern_label = f"Pattern group {idx+1}"
-            linestyle = '-'
-        for col in group:
-            plt.plot(data[x_column], data[col], marker='o', linestyle=linestyle, color='black', label=pattern_label)
+        
+        color = plt.cm.tab10(color_idx % 10)
+        color_idx += 1
 
+        for col in group:
+            if pattern_label not in used_labels:
+                plt.plot(data[x_column], data[col], marker='o', linestyle=linestyle, color=color, label=pattern_label)
+                used_labels.add(pattern_label)
+            else:
+                plt.plot(data[x_column], data[col], marker='o', linestyle=linestyle, color=color)
+
+    # Remove duplicate legend entries
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys(), title="Legend")
@@ -62,6 +81,7 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups,
     plt.grid(True)
     plt.tight_layout()
     st.pyplot(plt)
+
 
 def is_probably_log(column_data):
     col = np.array(column_data)
