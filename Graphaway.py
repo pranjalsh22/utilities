@@ -15,13 +15,16 @@ def read_file(uploaded_file):
         st.error("Unsupported file format. Please upload a valid CSV file with tabular data (comma or space-separated).")
         return None
 
-def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range, graph_title, style_selections):
+def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range, graph_title, style_map):
     plt.figure(figsize=(10, 6))
+
+    pattern_labels_used = {}
 
     for idx, y_column in enumerate(y_columns):
         label = custom_labels[idx] if custom_labels and idx < len(custom_labels) else y_column
-        linestyle = style_selections[idx] if idx < len(style_selections) else 'solid'
-        plt.plot(data[x_column], data[y_column], marker='o', linestyle=linestyle, label=label)
+        style, pattern_label = style_map.get(y_column, ('solid', 'Default'))
+        plt.plot(data[x_column], data[y_column], marker='o', linestyle=style, label=label)
+        pattern_labels_used[pattern_label] = style
 
     if x_log_scale:
         plt.xscale('log')
@@ -37,17 +40,15 @@ def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scal
     plt.title(graph_title)
     plt.grid(True)
 
-    # First Legend: Color (data series)
+    # First legend: Color-based
     first_legend = plt.legend(title='Data Series (Color)', loc='upper left')
     plt.gca().add_artist(first_legend)
 
-    # Second Legend: Line styles
+    # Second legend: Line styles
     style_legend_handles = []
-    unique_styles = set(style_selections)
-    for style in unique_styles:
-        line = mlines.Line2D([], [], color='black', linestyle=style, label=style)
-        style_legend_handles.append(line)
-    plt.legend(handles=style_legend_handles, title='Line Styles', loc='upper right')
+    for label, style in pattern_labels_used.items():
+        style_legend_handles.append(mlines.Line2D([], [], color='black', linestyle=style, label=label))
+    plt.legend(handles=style_legend_handles, title='Line Style Patterns', loc='upper right')
 
     plt.tight_layout()
     st.pyplot(plt)
@@ -125,17 +126,29 @@ def linegraph():
 
             graph_title = st.text_input("Enter Graph Title", f"Multiple Curves: Y vs {x_column}")
 
-            st.markdown("### Line Style Selection")
-            line_styles = ['solid', 'dashed', 'dashdot', 'dotted']
-            style_selections = []
-            for col in y_columns:
-                style = st.selectbox(f"Line style for {col}", line_styles, key=f"style_{col}")
-                style_selections.append(style)
+            st.markdown("### Line Style Groups")
+
+            style_groups = []
+            available_columns = set(y_columns)
+            num_groups = st.number_input("How many line style groups?", min_value=1, max_value=5, value=2)
+
+            for i in range(num_groups):
+                with st.expander(f"Line Style Group {i+1}"):
+                    label = st.text_input(f"Pattern Label for Group {i+1}", key=f"style_label_{i}")
+                    style = st.selectbox(f"Line Style for Group {i+1}", ['solid', 'dashed', 'dashdot', 'dotted'], key=f"style_style_{i}")
+                    cols = st.multiselect(f"Select Y-columns for Group {i+1}", sorted(list(available_columns)), key=f"style_cols_{i}")
+                    available_columns -= set(cols)
+                    style_groups.append({'label': label, 'style': style, 'columns': cols})
+
+            style_map = {}
+            for group in style_groups:
+                for col in group['columns']:
+                    style_map[col] = (group['style'], group['label'])
 
             if st.button("Plot Line Graph"):
                 x_range = (x_range_min, x_range_max)
                 y_range = (y_range_min, y_range_max)
-                plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range, graph_title, style_selections)
+                plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range, graph_title, style_map)
 
             # ---------------- Integration Section ----------------
             st.subheader("🔢 Integration")
