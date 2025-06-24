@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import simpson, trapezoid
+import matplotlib.lines as mlines
 
 def read_file(uploaded_file):
     try:
@@ -14,12 +15,13 @@ def read_file(uploaded_file):
         st.error("Unsupported file format. Please upload a valid CSV file with tabular data (comma or space-separated).")
         return None
 
-def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range):
+def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range, graph_title, style_selections):
     plt.figure(figsize=(10, 6))
-    
+
     for idx, y_column in enumerate(y_columns):
         label = custom_labels[idx] if custom_labels and idx < len(custom_labels) else y_column
-        plt.plot(data[x_column], data[y_column], marker='o', linestyle='-', label=label)
+        linestyle = style_selections[idx] if idx < len(style_selections) else 'solid'
+        plt.plot(data[x_column], data[y_column], marker='o', linestyle=linestyle, label=label)
 
     if x_log_scale:
         plt.xscale('log')
@@ -32,9 +34,21 @@ def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scal
 
     plt.xlabel(x_column)
     plt.ylabel("Y Values")
-    plt.title(f'Multiple Curves: Y vs {x_column}')
+    plt.title(graph_title)
     plt.grid(True)
-    plt.legend()
+
+    # First Legend: Color (data series)
+    first_legend = plt.legend(title='Data Series (Color)', loc='upper left')
+    plt.gca().add_artist(first_legend)
+
+    # Second Legend: Line styles
+    style_legend_handles = []
+    unique_styles = set(style_selections)
+    for style in unique_styles:
+        line = mlines.Line2D([], [], color='black', linestyle=style, label=style)
+        style_legend_handles.append(line)
+    plt.legend(handles=style_legend_handles, title='Line Styles', loc='upper right')
+
     plt.tight_layout()
     st.pyplot(plt)
 
@@ -109,10 +123,19 @@ def linegraph():
                 y_range_min = st.number_input("Y-axis min", value=float(data[y_columns[0]].min()), format="%.10e")
                 y_range_max = st.number_input("Y-axis max", value=float(data[y_columns[0]].max()), format="%.10e")
 
+            graph_title = st.text_input("Enter Graph Title", f"Multiple Curves: Y vs {x_column}")
+
+            st.markdown("### Line Style Selection")
+            line_styles = ['solid', 'dashed', 'dashdot', 'dotted']
+            style_selections = []
+            for col in y_columns:
+                style = st.selectbox(f"Line style for {col}", line_styles, key=f"style_{col}")
+                style_selections.append(style)
+
             if st.button("Plot Line Graph"):
                 x_range = (x_range_min, x_range_max)
                 y_range = (y_range_min, y_range_max)
-                plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range)
+                plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range, graph_title, style_selections)
 
             # ---------------- Integration Section ----------------
             st.subheader("🔢 Integration")
@@ -200,9 +223,3 @@ elif choice == "Pie Chart":
     plot_pie_chart()
 elif choice == "Bar Graph":
     plot_bar_chart()
-
-# Sidebar Info
-st.sidebar.info("version 3")
-st.sidebar.write("✅ Line Graph: multiple curves, custom labels")
-st.sidebar.write("✅ Pie Chart: simple value distribution")
-st.sidebar.write("✅ Bar Graph: custom labels for categories")
