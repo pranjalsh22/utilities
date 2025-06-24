@@ -28,21 +28,25 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups,
         'dashdot': '-.'
     }
 
-    # Plot by colors (all with solid line)
+    # Plot color groups (each group same color, solid line)
     for idx, group in enumerate(color_groups):
         color = plt.cm.tab10(idx % 10)
         label = color_labels[idx] if color_labels and idx < len(color_labels) else f"Color group {idx+1}"
         for col in group:
             plt.plot(data[x_column], data[col], marker='o', linestyle='-', color=color, label=label)
     
-    # Plot by patterns (all with black color)
+    # Plot pattern groups (all black color, different line styles)
     for idx, group in enumerate(pattern_groups):
-        linestyle = pattern_styles.get(pattern_labels[idx][1], '-') if pattern_labels and idx < len(pattern_labels) else '-'
-        pattern_label = pattern_labels[idx][0] if pattern_labels and idx < len(pattern_labels) else f"Pattern group {idx+1}"
+        if pattern_labels and idx < len(pattern_labels):
+            pattern_label, pattern_style_key = pattern_labels[idx]
+            linestyle = pattern_styles.get(pattern_style_key, '-')
+        else:
+            pattern_label = f"Pattern group {idx+1}"
+            linestyle = '-'
         for col in group:
             plt.plot(data[x_column], data[col], marker='o', linestyle=linestyle, color='black', label=pattern_label)
 
-    # To avoid duplicate legends:
+    # Remove duplicate legend entries
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys(), title="Legend")
@@ -245,4 +249,25 @@ def plot_bar_chart():
             use_labels = st.checkbox("Use custom labels from a column?")
             if use_labels:
                 label_column = st.selectbox("Select column for labels", columns)
-                labels = data[label_column
+                labels = data[label_column].astype(str)
+            else:
+                labels = data[x_column].astype(str)
+
+            fig, ax = plt.subplots()
+            ax.bar(labels, data[y_column])
+            ax.set_xlabel(x_column)
+            ax.set_ylabel(y_column)
+            ax.set_title(f'Bar Chart of {y_column} vs {x_column}')
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+            st.pyplot(fig)
+
+# ---------------- Main App ------------------
+choice = st.selectbox("Choose a graph type", ["Line Graph", "Pie Chart", "Bar Graph"])
+
+if choice == "Line Graph":
+    linegraph()
+elif choice == "Pie Chart":
+    plot_pie_chart()
+elif choice == "Bar Graph":
+    plot_bar_chart()
