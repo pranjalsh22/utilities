@@ -3,8 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import simpson, trapezoid
-import matplotlib.lines as mlines
-import itertools
+from matplotlib.lines import Line2D
 
 def read_file(uploaded_file):
     try:
@@ -16,28 +15,30 @@ def read_file(uploaded_file):
         st.error("Unsupported file format. Please upload a valid CSV file with tabular data (comma or space-separated).")
         return None
 
-def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range, graph_title, style_map, color_map):
+def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range,
+               graph_title, style_map, color_map, x_label, y_label):
     plt.figure(figsize=(10, 6))
 
-    used_colors = {}
-    used_styles = {}
-    color_palette = itertools.cycle(plt.cm.tab10.colors)  # fallback
+    # Reverse maps for legend creation
+    color_groups = {}
+    for y_col, c_info in color_map.items():
+        color_groups.setdefault(c_info['label'], set()).add(y_col)
 
-    assigned_colors = {}
+    style_groups = {}
+    for y_col, style_info in style_map.items():
+        style_groups.setdefault(style_info['label'], style_info['style'])
 
-    for idx, y_column in enumerate(y_columns):
-        label = custom_labels[idx] if custom_labels and idx < len(custom_labels) else y_column
-        style, style_label = style_map.get(y_column, ('solid', 'Default Style'))
-        color_label = color_map.get(y_column, 'Default Color')
+    # Plot each line with color and style
+    for y_col in y_columns:
+        # Get color & label
+        c = color_map[y_col]['color'] if y_col in color_map else None
+        c_label = color_map[y_col]['label'] if y_col in color_map else y_col
+        # Get style & label
+        ls = style_map[y_col]['style'] if y_col in style_map else '-'
+        ls_label = style_map[y_col]['label'] if y_col in style_map else 'Solid'
 
-        # assign consistent color for each color label
-        if color_label not in assigned_colors:
-            assigned_colors[color_label] = next(color_palette)
-        color = assigned_colors[color_label]
-
-        plt.plot(data[x_column], data[y_column], linestyle=style, color=color, marker='o', label=label)
-        used_colors[color_label] = color
-        used_styles[style_label] = style
+        # Plot line with label = None (we'll create custom legends)
+        plt.plot(data[x_column], data[y_col], marker='o', linestyle=ls, color=c, label=None)
 
     if x_log_scale:
         plt.xscale('log')
@@ -48,19 +49,24 @@ def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scal
     if y_range:
         plt.ylim(y_range)
 
-    plt.xlabel(x_column)
-    plt.ylabel("Y Values")
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
     plt.title(graph_title)
     plt.grid(True)
 
-    # First legend: Color
-    color_legend = [mlines.Line2D([], [], color=clr, linestyle='-', label=label) for label, clr in used_colors.items()]
-    first_legend = plt.legend(handles=color_legend, title='Color Groups', loc='upper left')
-    plt.gca().add_artist(first_legend)
+    # Create custom legend for colors
+    color_legend_handles = [
+        Line2D([0], [0], color=next(iter([v['color'] for k,v in color_map.items() if color_map[k]['label']==label])), lw=2)
+        for label in color_groups
+    ]
+    plt.legend(color_legend_handles, list(color_groups.keys()), title="Color Groups", loc='upper left')
 
-    # Second legend: Line Style
-    style_legend = [mlines.Line2D([], [], color='black', linestyle=sty, label=lbl) for lbl, sty in used_styles.items()]
-    plt.legend(handles=style_legend, title='Style Groups', loc='upper right')
+    # Create custom legend for line styles
+    style_legend_handles = [
+        Line2D([0], [0], color='black', lw=2, linestyle=style_groups[label])
+        for label in style_groups
+    ]
+    plt.legend(style_legend_handles, list(style_groups.keys()), title="Line Style Groups", loc='upper right')
 
     plt.tight_layout()
     st.pyplot(plt)
@@ -106,7 +112,7 @@ def integrate_curve(x_data, y_data, log_x=False, log_y=False, method='trapezoid'
         return "❌ Unknown method selected."
 
 def linegraph():
-    st.title("📈 Line Graph Plotting")
+    st.title("Line Graph Plotting")
     uploaded_file = st.file_uploader("Upload your data file", key="linegraph")
 
     if uploaded_file is not None:
@@ -129,56 +135,83 @@ def linegraph():
 
             with col2:
                 y_columns = st.multiselect("Select Y-axis columns", columns, default=[columns[1]])
-                custom_labels_input = st.text_input("Enter custom legends (comma-separated, optional)", "")
-                custom_labels = [label.strip() for label in custom_labels_input.split(",")] if custom_labels_input else []
-                y_log_detected = all([is_probably_log(data[col]) for col in y_columns])
-                y_log_scale = st.checkbox("Log scale for Y-axis", value=y_log_detected)
-                y_range_min = st.number_input("Y-axis min", value=float(data[y_columns[0]].min()), format="%.10e")
-                y_range_max = st.number_input("Y-axis max", value=float(data[y_columns[0]].max()), format="%.10e")
 
-            graph_title = st.text_input("Enter Graph Title", f"Multiple Curves: Y vs {x_column}")
+            st.subheader("Color Grouping (Multiple Y columns per color group)")
+            st.write("Select one or more Y-axis columns per color group and provide a label for that group.")
 
-            # Line Style Groups
-            st.markdown("### 🧵 Line Style Groups")
-            style_groups = []
-            available_style_cols = set(y_columns)
-            num_style_groups = st.number_input("How many style groups?", min_value=1, max_value=5, value=2)
+            color_groups = {}
+            used_columns_color = set()
+            max_color_groups = 5
+            for i in range(max_color_groups):
+                cols = st.multiselect(f"Color Group {i+1} - Select Y columns", [col for col in y_columns if col not in used_columns_color])
+                label = st.text_input(f"Color Group {i+1} Label", key=f"color_label_{i}")
+                if cols and label:
+                    for c in cols:
+                        used_columns_color.add(c)
+                    color_groups[label] = cols
 
-            for i in range(num_style_groups):
-                with st.expander(f"Style Group {i+1}"):
-                    label = st.text_input(f"Style Label for Group {i+1}", key=f"style_label_{i}")
-                    style = st.selectbox(f"Line Style for Group {i+1}", ['solid', 'dashed', 'dashdot', 'dotted'], key=f"style_type_{i}")
-                    cols = st.multiselect(f"Select Y-columns for this style", sorted(list(available_style_cols)), key=f"style_cols_{i}")
-                    available_style_cols -= set(cols)
-                    style_groups.append({'label': label, 'style': style, 'columns': cols})
+            # Assign colors for each group
+            base_colors = plt.cm.get_cmap('tab10').colors
+            color_map = {}
+            for idx, (label, cols) in enumerate(color_groups.items()):
+                col_color = base_colors[idx % len(base_colors)]
+                for c in cols:
+                    color_map[c] = {'color': col_color, 'label': label}
 
-            # Color Groups
-            st.markdown("### 🎨 Color Groups")
-            color_groups = []
-            available_color_cols = set(y_columns)
-            num_color_groups = st.number_input("How many color groups?", min_value=1, max_value=5, value=2)
+            # For columns not assigned to color groups, assign unique colors
+            for c in y_columns:
+                if c not in color_map:
+                    idx = len(color_map)
+                    col_color = base_colors[idx % len(base_colors)]
+                    color_map[c] = {'color': col_color, 'label': c}
 
-            for i in range(num_color_groups):
-                with st.expander(f"Color Group {i+1}"):
-                    label = st.text_input(f"Color Label for Group {i+1}", key=f"color_label_{i}")
-                    cols = st.multiselect(f"Select Y-columns for this color group", sorted(list(available_color_cols)), key=f"color_cols_{i}")
-                    available_color_cols -= set(cols)
-                    color_groups.append({'label': label, 'columns': cols})
+            st.subheader("Line Style Grouping (Multiple Y columns per style group)")
+            st.write("Select one or more Y-axis columns per line style group and provide a label for that group.")
+
+            # Available line styles
+            available_styles = ['-', '--', '-.', ':']
+            style_names = ['Solid', 'Dashed', 'Dash-dot', 'Dotted']
+
+            style_groups = {}
+            used_columns_style = set()
+            max_style_groups = 4
+            for i in range(max_style_groups):
+                cols = st.multiselect(f"Style Group {i+1} - Select Y columns", [col for col in y_columns if col not in used_columns_style])
+                label = st.text_input(f"Style Group {i+1} Label", key=f"style_label_{i}")
+                if cols and label:
+                    for c in cols:
+                        used_columns_style.add(c)
+                    style_groups[label] = {'columns': cols, 'style': available_styles[i % len(available_styles)]}
 
             style_map = {}
-            for group in style_groups:
-                for col in group['columns']:
-                    style_map[col] = (group['style'], group['label'])
+            for label, group_info in style_groups.items():
+                for c in group_info['columns']:
+                    style_map[c] = {'style': group_info['style'], 'label': label}
 
-            color_map = {}
-            for group in color_groups:
-                for col in group['columns']:
-                    color_map[col] = group['label']
+            # Assign solid style for columns not in any style group
+            for c in y_columns:
+                if c not in style_map:
+                    style_map[c] = {'style': '-', 'label': 'Solid'}
+
+            custom_labels_input = st.text_input("Enter custom legends for Y lines (comma-separated, optional)", "")
+            custom_labels = [label.strip() for label in custom_labels_input.split(",")] if custom_labels_input else []
+
+            y_log_detected = all([is_probably_log(data[col]) for col in y_columns])
+            y_log_scale = st.checkbox("Log scale for Y-axis", value=y_log_detected)
+            y_range_min = st.number_input("Y-axis min", value=float(data[y_columns[0]].min()) if y_columns else 0.0, format="%.10e")
+            y_range_max = st.number_input("Y-axis max", value=float(data[y_columns[0]].max()) if y_columns else 1.0, format="%.10e")
+
+            graph_title = st.text_input("Enter Graph Title", f"Multiple Curves: Y vs {x_column}")
+            x_axis_label = st.text_input("X-axis Label", x_column)
+            y_axis_label = st.text_input("Y-axis Label", "Y Values")
 
             if st.button("Plot Line Graph"):
                 x_range = (x_range_min, x_range_max)
                 y_range = (y_range_min, y_range_max)
-                plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range, graph_title, style_map, color_map)
+                plot_graph(data, x_column, y_columns, custom_labels,
+                           x_log_scale, y_log_scale, x_range, y_range,
+                           graph_title, style_map, color_map,
+                           x_axis_label, y_axis_label)
 
             # ---------------- Integration Section ----------------
             st.subheader("🔢 Integration")
