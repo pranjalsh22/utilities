@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import simpson, trapezoid
 import matplotlib.lines as mlines
+import itertools
 
 def read_file(uploaded_file):
     try:
@@ -15,16 +16,28 @@ def read_file(uploaded_file):
         st.error("Unsupported file format. Please upload a valid CSV file with tabular data (comma or space-separated).")
         return None
 
-def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range, graph_title, style_map):
+def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range, graph_title, style_map, color_map):
     plt.figure(figsize=(10, 6))
 
-    pattern_labels_used = {}
+    used_colors = {}
+    used_styles = {}
+    color_palette = itertools.cycle(plt.cm.tab10.colors)  # fallback
+
+    assigned_colors = {}
 
     for idx, y_column in enumerate(y_columns):
         label = custom_labels[idx] if custom_labels and idx < len(custom_labels) else y_column
-        style, pattern_label = style_map.get(y_column, ('solid', 'Default'))
-        plt.plot(data[x_column], data[y_column], marker='o', linestyle=style, label=label)
-        pattern_labels_used[pattern_label] = style
+        style, style_label = style_map.get(y_column, ('solid', 'Default Style'))
+        color_label = color_map.get(y_column, 'Default Color')
+
+        # assign consistent color for each color label
+        if color_label not in assigned_colors:
+            assigned_colors[color_label] = next(color_palette)
+        color = assigned_colors[color_label]
+
+        plt.plot(data[x_column], data[y_column], linestyle=style, color=color, marker='o', label=label)
+        used_colors[color_label] = color
+        used_styles[style_label] = style
 
     if x_log_scale:
         plt.xscale('log')
@@ -40,15 +53,14 @@ def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scal
     plt.title(graph_title)
     plt.grid(True)
 
-    # First legend: Color-based
-    first_legend = plt.legend(title='Data Series (Color)', loc='upper left')
+    # First legend: Color
+    color_legend = [mlines.Line2D([], [], color=clr, linestyle='-', label=label) for label, clr in used_colors.items()]
+    first_legend = plt.legend(handles=color_legend, title='Color Groups', loc='upper left')
     plt.gca().add_artist(first_legend)
 
-    # Second legend: Line styles
-    style_legend_handles = []
-    for label, style in pattern_labels_used.items():
-        style_legend_handles.append(mlines.Line2D([], [], color='black', linestyle=style, label=label))
-    plt.legend(handles=style_legend_handles, title='Line Style Patterns', loc='upper right')
+    # Second legend: Line Style
+    style_legend = [mlines.Line2D([], [], color='black', linestyle=sty, label=lbl) for lbl, sty in used_styles.items()]
+    plt.legend(handles=style_legend, title='Style Groups', loc='upper right')
 
     plt.tight_layout()
     st.pyplot(plt)
@@ -94,7 +106,7 @@ def integrate_curve(x_data, y_data, log_x=False, log_y=False, method='trapezoid'
         return "❌ Unknown method selected."
 
 def linegraph():
-    st.title("Line Graph Plotting")
+    st.title("📈 Line Graph Plotting")
     uploaded_file = st.file_uploader("Upload your data file", key="linegraph")
 
     if uploaded_file is not None:
@@ -126,29 +138,47 @@ def linegraph():
 
             graph_title = st.text_input("Enter Graph Title", f"Multiple Curves: Y vs {x_column}")
 
-            st.markdown("### Line Style Groups")
-
+            # Line Style Groups
+            st.markdown("### 🧵 Line Style Groups")
             style_groups = []
-            available_columns = set(y_columns)
-            num_groups = st.number_input("How many line style groups?", min_value=1, max_value=5, value=2)
+            available_style_cols = set(y_columns)
+            num_style_groups = st.number_input("How many style groups?", min_value=1, max_value=5, value=2)
 
-            for i in range(num_groups):
-                with st.expander(f"Line Style Group {i+1}"):
-                    label = st.text_input(f"Pattern Label for Group {i+1}", key=f"style_label_{i}")
-                    style = st.selectbox(f"Line Style for Group {i+1}", ['solid', 'dashed', 'dashdot', 'dotted'], key=f"style_style_{i}")
-                    cols = st.multiselect(f"Select Y-columns for Group {i+1}", sorted(list(available_columns)), key=f"style_cols_{i}")
-                    available_columns -= set(cols)
+            for i in range(num_style_groups):
+                with st.expander(f"Style Group {i+1}"):
+                    label = st.text_input(f"Style Label for Group {i+1}", key=f"style_label_{i}")
+                    style = st.selectbox(f"Line Style for Group {i+1}", ['solid', 'dashed', 'dashdot', 'dotted'], key=f"style_type_{i}")
+                    cols = st.multiselect(f"Select Y-columns for this style", sorted(list(available_style_cols)), key=f"style_cols_{i}")
+                    available_style_cols -= set(cols)
                     style_groups.append({'label': label, 'style': style, 'columns': cols})
+
+            # Color Groups
+            st.markdown("### 🎨 Color Groups")
+            color_groups = []
+            available_color_cols = set(y_columns)
+            num_color_groups = st.number_input("How many color groups?", min_value=1, max_value=5, value=2)
+
+            for i in range(num_color_groups):
+                with st.expander(f"Color Group {i+1}"):
+                    label = st.text_input(f"Color Label for Group {i+1}", key=f"color_label_{i}")
+                    cols = st.multiselect(f"Select Y-columns for this color group", sorted(list(available_color_cols)), key=f"color_cols_{i}")
+                    available_color_cols -= set(cols)
+                    color_groups.append({'label': label, 'columns': cols})
 
             style_map = {}
             for group in style_groups:
                 for col in group['columns']:
                     style_map[col] = (group['style'], group['label'])
 
+            color_map = {}
+            for group in color_groups:
+                for col in group['columns']:
+                    color_map[col] = group['label']
+
             if st.button("Plot Line Graph"):
                 x_range = (x_range_min, x_range_max)
                 y_range = (y_range_min, y_range_max)
-                plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range, graph_title, style_map)
+                plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range, graph_title, style_map, color_map)
 
             # ---------------- Integration Section ----------------
             st.subheader("🔢 Integration")
@@ -176,7 +206,6 @@ def linegraph():
                         st.error(result)
                     else:
                         st.success(f"Estimated integral using {method} rule: {result:E}")
-            # ------------------------------------------------------
 
 def plot_pie_chart():
     st.title("Pie Chart Visualization")
