@@ -111,23 +111,24 @@ def linegraph():
         data = read_file(uploaded_file)
 
         if data is not None:
-            display_data = data.applymap(lambda x: f'{x:.3e}' if isinstance(x, (float, int)) else x)
             st.subheader("🔍 Data Preview")
-            st.dataframe(display_data)
+            st.dataframe(data)
 
             columns = data.columns.tolist()
 
+            # Axis configuration
             st.markdown("### ✏️ Axis Configuration")
             x_column = st.selectbox("Select **X-axis column**", columns)
+
             y_columns = st.multiselect("Select **Y-axis columns** (plotted together)", columns, default=[columns[1]])
 
-            col1, col2 = st.columns(2)
-            with col1:
-                title = st.text_input("📛 Graph Title", f'Multiple Curves: Y vs {x_column}')
-                x_axis_label = st.text_input("📌 X-axis Label", x_column)
-            with col2:
-                y_axis_label = st.text_input("📌 Y-axis Label", "Y Values")
+            # Sidebar: Labels and Title
+            st.sidebar.header("📝 Labels & Title")
+            title = st.sidebar.text_input("Graph Title", f'Multiple Curves: Y vs {x_column}')
+            x_axis_label = st.sidebar.text_input("X-axis Label", x_column)
+            y_axis_label = st.sidebar.text_input("Y-axis Label", "Y Values")
 
+            # Axis scale and range
             with st.expander("📐 Axis Scale & Range", expanded=True):
                 col1, col2 = st.columns(2)
                 with col1:
@@ -141,29 +142,36 @@ def linegraph():
                     y_range_min = st.number_input("Y-axis min", value=float(data[y_columns[0]].min()), format="%.10e")
                     y_range_max = st.number_input("Y-axis max", value=float(data[y_columns[0]].max()), format="%.10e")
 
-            with st.expander("🎨 Color Groups (same color, solid line)"):
-                color_groups_input = st.text_area(
-                    "Enter Y column groups (semicolon-separated):",
-                    value=f"{','.join(y_columns)}"
-                )
-                color_labels_input = st.text_input("Group labels (comma-separated)", "")
-                color_groups = [grp.strip().split(",") for grp in color_groups_input.split(";") if grp.strip()]
-                color_labels = [label.strip() for label in color_labels_input.split(",")] if color_labels_input else []
+            # 🎨 Color Groups
+            with st.expander("🎨 Define Color Groups"):
+                st.markdown("Create multiple color groups with same line style and different colors.")
+                color_groups = []
+                color_labels = []
+                num_color_groups = st.number_input("Number of color groups", min_value=1, max_value=10, value=1)
 
-            with st.expander("🎚️ Pattern Groups (black color, different styles)"):
+                for i in range(num_color_groups):
+                    cols = st.multiselect(f"Color Group {i+1} Columns", columns, key=f"color_group_{i}")
+                    label = st.text_input(f"Label for Color Group {i+1}", key=f"color_label_{i}", value=f"Group {i+1}")
+                    if cols:
+                        color_groups.append(cols)
+                        color_labels.append(label)
+
+            # 🎚️ Pattern Groups
+            with st.expander("🎚️ Define Pattern Groups"):
+                st.markdown("Create multiple pattern groups (different line styles, black color).")
                 st.markdown("Available patterns: `solid`, `dotted`, `dashed`, `dashdot`")
-                pattern_groups_input = st.text_area("Enter Y column groups (semicolon-separated)", value="")
-                pattern_labels_input = st.text_area(
-                    "Pattern labels and types (format: Label|Pattern; ...)",
-                    value=""
-                )
-                pattern_groups = [grp.strip().split(",") for grp in pattern_groups_input.split(";") if grp.strip()]
+                pattern_styles_available = ['solid', 'dotted', 'dashed', 'dashdot']
+                pattern_groups = []
                 pattern_labels = []
-                if pattern_labels_input:
-                    for item in pattern_labels_input.split(";"):
-                        if "|" in item:
-                            label, pattern = item.split("|", 1)
-                            pattern_labels.append((label.strip(), pattern.strip()))
+                num_pattern_groups = st.number_input("Number of pattern groups", min_value=0, max_value=10, value=0)
+
+                for i in range(num_pattern_groups):
+                    cols = st.multiselect(f"Pattern Group {i+1} Columns", columns, key=f"pattern_group_{i}")
+                    label = st.text_input(f"Label for Pattern Group {i+1}", key=f"pattern_label_{i}", value=f"Pattern {i+1}")
+                    pattern = st.selectbox(f"Pattern Style for Group {i+1}", pattern_styles_available, key=f"pattern_style_{i}")
+                    if cols:
+                        pattern_groups.append(cols)
+                        pattern_labels.append((label, pattern))
 
             if st.button("📊 Plot Line Graph"):
                 x_range = (x_range_min, x_range_max)
@@ -177,6 +185,7 @@ def linegraph():
                     title, x_axis_label, y_axis_label
                 )
 
+            # 🧮 Integration
             with st.expander("🧮 Integration (Area under the Curve)"):
                 st.markdown(f"**Auto-detected:** X-axis log scale: `{x_log_detected}`, Y-axis log scale: `{y_log_detected}`")
                 override_log_x = st.checkbox("Override X-axis as log scale", value=x_log_scale)
