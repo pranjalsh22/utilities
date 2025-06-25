@@ -215,6 +215,7 @@ def linegraph():
                             st.error(result)
                         else:
                             st.success(f"✅ Integral using {method}: `{result:.4E}`")
+                
 
 
 
