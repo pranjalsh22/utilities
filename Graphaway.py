@@ -193,4 +193,89 @@ def linegraph():
             with st.expander("🧮 Integration (Area under the Curve)"):
                 override_log_x = st.checkbox("Use log scale for X-axis in integration", value=x_log_scale)
                 override_log_y = st.checkbox("Use log scale for Y-axis in integration", value=y_log_scale)
-                method = st.selectbox("Select method", ["trapezoid", "
+                method = st.selectbox("Select integration method", ["trapezoid", "Simpson 1/3", "Simpson 3/8"])
+
+                if st.button("➕ Calculate Integral"):
+                    if len(y_columns) != 1:
+                        st.warning("Please select **only one** Y-axis column for integration.")
+                    else:
+                        x_vals = pd.to_numeric(data[x_column], errors='coerce').dropna().values
+                        y_vals = pd.to_numeric(data[y_columns[0]], errors='coerce').dropna().values
+
+                        # Ensure matching lengths after dropping NaNs
+                        if len(x_vals) != len(y_vals):
+                            st.error("Mismatch in valid numeric data points between X and Y columns after cleaning.")
+                        elif len(x_vals) < 2:
+                            st.error("Not enough data points for integration after cleaning.")
+                        else:
+                            result = integrate_curve(x_vals, y_vals, log_x=override_log_x, log_y=override_log_y, method=method)
+                            if isinstance(result, str) and result.startswith("❌"):
+                                st.error(result)
+                            else:
+                                st.success(f"✅ Integral using {method}: `{result:.4E}`")
+
+
+def plot_pie_chart():
+    st.title("🥧 Pie Chart Visualization")
+    uploaded_file = st.file_uploader("Upload your data file", key="piechart")
+
+    if uploaded_file is not None:
+        data = read_file(uploaded_file)
+        if data is not None:
+            st.subheader("Data Preview")
+            st.write(data)
+
+            column = st.selectbox("Select a column for the pie chart", data.columns)
+
+            fig, ax = plt.subplots()
+            data[column].value_counts().plot.pie(autopct='%1.1f%%', ax=ax)
+            ax.set_title(f"Pie Chart of {column}")
+            st.pyplot(fig)
+
+
+def plot_bar_chart():
+    st.title("📊 Bar Chart Visualization")
+    uploaded_file = st.file_uploader("Upload your data file", key="barchart")
+
+    if uploaded_file is not None:
+        data = read_file(uploaded_file)
+        if data is not None:
+            st.subheader("Data Preview")
+            st.write(data)
+
+            columns = data.columns.tolist()
+            x_column = st.selectbox("Select X-axis column", columns)
+            y_column = st.selectbox("Select Y-axis column", columns, index=1)
+
+            use_labels = st.checkbox("Use custom labels from a column?")
+            if use_labels:
+                label_column = st.selectbox("Select column for labels", columns)
+                labels = data[label_column].astype(str)
+            else:
+                labels = data[x_column].astype(str)
+
+            fig, ax = plt.subplots()
+            ax.bar(labels, data[y_column])
+            ax.set_xlabel(x_column)
+            ax.set_ylabel(y_column)
+            ax.set_title(f"Bar Chart: {y_column} vs {x_column}")
+            plt.xticks(rotation=45, ha='right')
+            plt.tight_layout()
+            st.pyplot(fig)
+
+
+def main():
+    st.sidebar.title("Visualization Tools")
+    option = st.sidebar.selectbox("Choose a tool", 
+                                  ["Line Graph Plot", "Pie Chart", "Bar Chart"])
+
+    if option == "Line Graph Plot":
+        linegraph()
+    elif option == "Pie Chart":
+        plot_pie_chart()
+    elif option == "Bar Chart":
+        plot_bar_chart()
+
+
+if __name__ == "__main__":
+    main()
