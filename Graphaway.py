@@ -39,12 +39,18 @@ def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scal
     st.pyplot(plt)
 
 def is_probably_log(column_data):
-    col = np.array(column_data)
-    if np.any(col <= 0):
+    try:
+        col = pd.to_numeric(column_data, errors='coerce').dropna().values
+        if len(col) == 0:
+            return False
+        if np.any(col <= 0):
+            return False
+        if (np.min(col) > -10) and (np.max(col) < 10):
+            return True
+    except Exception as e:
         return False
-    if (np.min(col) > -10) and (np.max(col) < 10):
-        return True
     return False
+
 
 def integrate_curve(x_data, y_data, log_x=False, log_y=False, method='trapezoid'):
     if log_x:
