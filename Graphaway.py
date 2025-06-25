@@ -190,29 +190,32 @@ def linegraph():
                     title, x_axis_label, y_axis_label
                 )
 
-            with st.expander("🧮 Integration (Area under the Curve)"):
+           with st.expander("🧮 Integration (Area under the Curve)"):
+                int_x_column = st.selectbox("Select X-axis column for integration", columns, index=columns.index(x_column))
+                int_y_column = st.selectbox("Select Y-axis column for integration", columns, index=columns.index(y_columns[0]) if y_columns else 0)
+            
                 override_log_x = st.checkbox("Use log scale for X-axis in integration", value=x_log_scale)
                 override_log_y = st.checkbox("Use log scale for Y-axis in integration", value=y_log_scale)
                 method = st.selectbox("Select integration method", ["trapezoid", "Simpson 1/3", "Simpson 3/8"])
-
+            
                 if st.button("➕ Calculate Integral"):
-                    if len(y_columns) != 1:
-                        st.warning("Please select **only one** Y-axis column for integration.")
+                    x_vals = pd.to_numeric(data[int_x_column], errors='coerce').dropna().values
+                    y_vals = pd.to_numeric(data[int_y_column], errors='coerce').dropna().values
+            
+                    # Align the data lengths by dropping rows with NaNs in either column
+                    combined = data[[int_x_column, int_y_column]].dropna()
+                    x_vals = combined[int_x_column].values
+                    y_vals = combined[int_y_column].values
+            
+                    if len(x_vals) < 2:
+                        st.error("Not enough valid data points for integration.")
                     else:
-                        x_vals = pd.to_numeric(data[x_column], errors='coerce').dropna().values
-                        y_vals = pd.to_numeric(data[y_columns[0]], errors='coerce').dropna().values
-
-                        # Ensure matching lengths after dropping NaNs
-                        if len(x_vals) != len(y_vals):
-                            st.error("Mismatch in valid numeric data points between X and Y columns after cleaning.")
-                        elif len(x_vals) < 2:
-                            st.error("Not enough data points for integration after cleaning.")
+                        result = integrate_curve(x_vals, y_vals, log_x=override_log_x, log_y=override_log_y, method=method)
+                        if isinstance(result, str) and result.startswith("❌"):
+                            st.error(result)
                         else:
-                            result = integrate_curve(x_vals, y_vals, log_x=override_log_x, log_y=override_log_y, method=method)
-                            if isinstance(result, str) and result.startswith("❌"):
-                                st.error(result)
-                            else:
-                                st.success(f"✅ Integral using {method}: `{result:.4E}`")
+                            st.success(f"✅ Integral using {method}: `{result:.4E}`")
+
 
 
 def plot_pie_chart():
