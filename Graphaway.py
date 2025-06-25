@@ -199,24 +199,28 @@ def linegraph():
                 method = st.selectbox("Select integration method", ["trapezoid", "Simpson 1/3", "Simpson 3/8"])
             
                 if st.button("➕ Calculate Integral"):
-                    x_vals = pd.to_numeric(data[int_x_column], errors='coerce').dropna().values
-                    y_vals = pd.to_numeric(data[int_y_column], errors='coerce').dropna().values
+                    # Drop rows where either integration column has NaN or non-numeric values
+                    combined = data[[int_x_column, int_y_column]].copy()
+                    combined[int_x_column] = pd.to_numeric(combined[int_x_column], errors='coerce')
+                    combined[int_y_column] = pd.to_numeric(combined[int_y_column], errors='coerce')
+                    combined = combined.dropna()
             
-                    # Align the data lengths by dropping rows with NaNs in either column
-                    combined = data[[int_x_column, int_y_column]].dropna()
                     x_vals = combined[int_x_column].values
                     y_vals = combined[int_y_column].values
             
                     if len(x_vals) < 2:
                         st.error("Not enough valid data points for integration.")
+                    elif len(x_vals) != len(y_vals):
+                        st.error("X and Y data length mismatch after cleaning.")
                     else:
-                        result = integrate_curve(x_vals, y_vals, log_x=override_log_x, log_y=override_log_y, method=method)
-                        if isinstance(result, str) and result.startswith("❌"):
-                            st.error(result)
-                        else:
-                            st.success(f"✅ Integral using {method}: `{result:.4E}`")
-                
-
+                        try:
+                            result = integrate_curve(x_vals, y_vals, log_x=override_log_x, log_y=override_log_y, method=method)
+                            if isinstance(result, str) and result.startswith("❌"):
+                                st.error(result)
+                            else:
+                                st.success(f"✅ Integral using {method}: `{result:.4E}`")
+                        except Exception as e:
+                            st.error(f"Integration error: {e}")
 
 
 def plot_pie_chart():
