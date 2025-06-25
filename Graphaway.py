@@ -3,15 +3,26 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import simpson, trapezoid
+import pandas as pd
+import streamlit as st
 
 def read_file(uploaded_file):
     try:
         if st.checkbox("Small space is separating criteria"):
-            return pd.read_csv(uploaded_file, delim_whitespace=True)
+            df = pd.read_csv(uploaded_file, delim_whitespace=True, engine='python')
         else:
-            return pd.read_csv(uploaded_file)
-    except:
-        st.error("Unsupported file format. Please upload a valid CSV file with tabular data (comma or space-separated).")
+            df = pd.read_csv(uploaded_file, engine='python')  # engine='python' is more forgiving with weird formats
+
+        # Optional: ensure numeric columns interpret scientific notation
+        for col in df.select_dtypes(include=['object']):
+            try:
+                df[col] = pd.to_numeric(df[col], errors='ignore')
+            except Exception:
+                pass  # Skip columns that can't be converted
+
+        return df
+    except Exception as e:
+        st.error(f"Unsupported file format. Please upload a valid CSV file with tabular data (comma or space-separated).\nError: {e}")
         return None
 
 def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range):
