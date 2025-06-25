@@ -38,14 +38,6 @@ def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scal
     plt.tight_layout()
     st.pyplot(plt)
 
-def is_probably_log(column_data):
-    col = np.array(column_data)
-    if np.any(col <= 0):
-        return False
-    if (np.min(col) > -10) and (np.max(col) < 10):
-        return True
-    return False
-
 def integrate_curve(x_data, y_data, log_x=False, log_y=False, method='trapezoid'):
     if log_x:
         x_data = np.power(10, x_data)
@@ -95,8 +87,7 @@ def linegraph():
 
             with col1:
                 x_column = st.selectbox("Select X-axis column", columns)
-                x_log_detected = is_probably_log(data[x_column])
-                x_log_scale = st.checkbox("Log scale for X-axis", value=x_log_detected)
+                x_log_scale = st.checkbox("Log scale for X-axis", value=False)
                 x_range_min = st.number_input(f"X-axis {x_column} min", value=float(data[x_column].min()), format="%.10e")
                 x_range_max = st.number_input(f"X-axis {x_column} max", value=float(data[x_column].max()), format="%.10e")
 
@@ -104,8 +95,7 @@ def linegraph():
                 y_columns = st.multiselect("Select Y-axis columns", columns, default=[columns[1]])
                 custom_labels_input = st.text_input("Enter custom legends (comma-separated, optional)", "")
                 custom_labels = [label.strip() for label in custom_labels_input.split(",")] if custom_labels_input else []
-                y_log_detected = all([is_probably_log(data[col]) for col in y_columns])
-                y_log_scale = st.checkbox("Log scale for Y-axis", value=y_log_detected)
+                y_log_scale = st.checkbox("Log scale for Y-axis", value=False)
                 y_range_min = st.number_input("Y-axis min", value=float(data[y_columns[0]].min()), format="%.10e")
                 y_range_max = st.number_input("Y-axis max", value=float(data[y_columns[0]].max()), format="%.10e")
 
@@ -118,7 +108,6 @@ def linegraph():
             st.subheader("🔢 Integration")
             st.write("Estimate area under the curve.")
 
-            st.markdown(f"**Log detection:** X-axis: {x_log_detected}, Y-axis: {y_log_detected}")
             override_log_x = st.checkbox("Override: X-axis data is in log scale", value=x_log_scale)
             override_log_y = st.checkbox("Override: Y-axis data is in log scale", value=y_log_scale)
 
