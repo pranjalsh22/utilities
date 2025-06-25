@@ -116,7 +116,6 @@ def integrate_curve(x_data, y_data, log_x=False, log_y=False, method='trapezoid'
     else:
         return "❌ Unknown method selected."
 
-
 def linegraph():
     st.title("📈 Line Graph Plotting Tool")
     uploaded_file = st.file_uploader("📤 Upload your data file", key="linegraph")
@@ -204,10 +203,12 @@ def linegraph():
                     combined[int_x_column] = pd.to_numeric(combined[int_x_column], errors='coerce')
                     combined[int_y_column] = pd.to_numeric(combined[int_y_column], errors='coerce')
                     combined = combined.dropna()
-            
+
+                    combined = combined.sort_values(by=int_x_column)  # <-- Fix: sort by X column for integration
+
                     x_vals = combined[int_x_column].values
                     y_vals = combined[int_y_column].values
-            
+
                     if len(x_vals) < 2:
                         st.error("Not enough valid data points for integration.")
                     elif len(x_vals) != len(y_vals):
@@ -221,7 +222,6 @@ def linegraph():
                                 st.success(f"✅ Integral using {method}: `{result:.4E}`")
                         except Exception as e:
                             st.error(f"Integration error: {e}")
-
 
 def plot_pie_chart():
     st.title("🥧 Pie Chart Visualization")
