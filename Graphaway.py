@@ -7,19 +7,12 @@ from scipy.integrate import simpson, trapezoid
 def read_file(uploaded_file):
     try:
         if st.checkbox("Small space is separating criteria"):
-            df = pd.read_csv(uploaded_file, delim_whitespace=True)
+            return pd.read_csv(uploaded_file, delim_whitespace=True)
         else:
-            df = pd.read_csv(uploaded_file)
-
-        # Try converting all columns to numeric if possible
-        for col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors='ignore')  # ignore = don't coerce strings
-
-        return df
-    except Exception as e:
-        st.error(f"Error reading file: {e}")
+            return pd.read_csv(uploaded_file)
+    except:
+        st.error("Unsupported file format. Please upload a valid CSV file with tabular data (comma or space-separated).")
         return None
-
 
 def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range):
     plt.figure(figsize=(10, 6))
@@ -46,18 +39,12 @@ def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scal
     st.pyplot(plt)
 
 def is_probably_log(column_data):
-    try:
-        col = pd.to_numeric(column_data, errors='coerce').dropna().values
-        if len(col) == 0:
-            return False
-        if np.any(col <= 0):
-            return False
-        if (np.min(col) > -10) and (np.max(col) < 10):
-            return True
-    except Exception as e:
+    col = np.array(column_data)
+    if np.any(col <= 0):
         return False
+    if (np.min(col) > -10) and (np.max(col) < 10):
+        return True
     return False
-
 
 def integrate_curve(x_data, y_data, log_x=False, log_y=False, method='trapezoid'):
     if log_x:
@@ -92,7 +79,7 @@ def integrate_curve(x_data, y_data, log_x=False, log_y=False, method='trapezoid'
         return "❌ Unknown method selected."
 
 def linegraph():
-    st.title("Line Graph Plotting")
+    st.title("Interactive Data Plotting with Streamlit")
     uploaded_file = st.file_uploader("Upload your data file", key="linegraph")
 
     if uploaded_file is not None:
@@ -122,7 +109,7 @@ def linegraph():
                 y_range_min = st.number_input("Y-axis min", value=float(data[y_columns[0]].min()), format="%.10e")
                 y_range_max = st.number_input("Y-axis max", value=float(data[y_columns[0]].max()), format="%.10e")
 
-            if st.button("Plot Line Graph"):
+            if st.button("Plot Graph"):
                 x_range = (x_range_min, x_range_max)
                 y_range = (y_range_min, y_range_max)
                 plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range)
@@ -173,49 +160,15 @@ def plot_pie_chart():
             ax.set_title(f"Pie Chart of {column}")
             st.pyplot(fig)
 
-def plot_bar_chart():
-    st.title("Bar Chart Visualization")
-    uploaded_file = st.file_uploader("Upload your data file", key="barchart")
-
-    if uploaded_file is not None:
-        data = read_file(uploaded_file)
-
-        if data is not None:
-            st.subheader("Data Preview")
-            st.write(data)
-
-            columns = data.columns.tolist()
-            x_column = st.selectbox("Select X-axis column", columns)
-            y_column = st.selectbox("Select Y-axis column", columns, index=1)
-
-            use_labels = st.checkbox("Use custom labels from a column?")
-            if use_labels:
-                label_column = st.selectbox("Select column for labels", columns)
-                labels = data[label_column].astype(str)
-            else:
-                labels = data[x_column].astype(str)
-
-            fig, ax = plt.subplots()
-            ax.bar(labels, data[y_column])
-            ax.set_xlabel(x_column)
-            ax.set_ylabel(y_column)
-            ax.set_title(f'Bar Chart of {y_column} vs {x_column}')
-            plt.xticks(rotation=45)
-            plt.tight_layout()
-            st.pyplot(fig)
-
-# ---------------- Main App ------------------
-choice = st.selectbox("Choose a graph type", ["Line Graph", "Pie Chart", "Bar Graph"])
-
+# Main App Logic
+choice = st.selectbox("Choose an option", ["Line Graph", "Pie Chart"])
 if choice == "Line Graph":
     linegraph()
 elif choice == "Pie Chart":
     plot_pie_chart()
-elif choice == "Bar Graph":
-    plot_bar_chart()
 
-# Sidebar Info
+# Sidebar info
 st.sidebar.info("version 3")
-st.sidebar.write("✅ Line Graph: multiple curves, custom labels")
-st.sidebar.write("✅ Pie Chart: simple value distribution")
-st.sidebar.write("✅ Bar Graph: custom labels for categories")
+st.sidebar.write("version 2: added pie chart")
+st.sidebar.write("version 2: added advanced integration options")
+st.sidebar.write("version 3: added support for multiple Y-axis curves and custom legends")
