@@ -190,7 +190,7 @@ def linegraph():
                     title, x_axis_label, y_axis_label
                 )
 
-           with st.expander("🧮 Integration (Area under the Curve)"):
+            with st.expander("🧮 Integration (Area under the Curve)"):
                 int_x_column = st.selectbox("Select X-axis column for integration", columns, index=columns.index(x_column))
                 int_y_column = st.selectbox("Select Y-axis column for integration", columns, index=columns.index(y_columns[0]) if y_columns else 0)
             
