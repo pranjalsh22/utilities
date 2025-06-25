@@ -16,7 +16,7 @@ def read_file(uploaded_file):
 
 def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range):
     plt.figure(figsize=(10, 6))
-    
+
     for idx, y_column in enumerate(y_columns):
         label = custom_labels[idx] if custom_labels and idx < len(custom_labels) else y_column
         plt.plot(data[x_column], data[y_column], marker='o', linestyle='-', label=label)
@@ -76,7 +76,7 @@ def linegraph():
 
     if uploaded_file is not None:
         data = read_file(uploaded_file)
-        
+
         if data is not None:
             display_data = data.applymap(lambda x: f'{x:.3e}' if isinstance(x, (float, int)) else x)
             st.subheader("Data Preview")
@@ -87,17 +87,19 @@ def linegraph():
 
             with col1:
                 x_column = st.selectbox("Select X-axis column", columns)
+                x_col_numeric = pd.to_numeric(data[x_column], errors='coerce')
                 x_log_scale = st.checkbox("Log scale for X-axis", value=False)
-                x_range_min = st.number_input(f"X-axis {x_column} min", value=float(data[x_column].min()), format="%.10e")
-                x_range_max = st.number_input(f"X-axis {x_column} max", value=float(data[x_column].max()), format="%.10e")
+                x_range_min = st.number_input(f"X-axis {x_column} min", value=float(x_col_numeric.min()), format="%.10e")
+                x_range_max = st.number_input(f"X-axis {x_column} max", value=float(x_col_numeric.max()), format="%.10e")
 
             with col2:
                 y_columns = st.multiselect("Select Y-axis columns", columns, default=[columns[1]])
                 custom_labels_input = st.text_input("Enter custom legends (comma-separated, optional)", "")
                 custom_labels = [label.strip() for label in custom_labels_input.split(",")] if custom_labels_input else []
+                y_col_numeric = pd.to_numeric(data[y_columns[0]], errors='coerce')
                 y_log_scale = st.checkbox("Log scale for Y-axis", value=False)
-                y_range_min = st.number_input("Y-axis min", value=float(data[y_columns[0]].min()), format="%.10e")
-                y_range_max = st.number_input("Y-axis max", value=float(data[y_columns[0]].max()), format="%.10e")
+                y_range_min = st.number_input("Y-axis min", value=float(y_col_numeric.min()), format="%.10e")
+                y_range_max = st.number_input("Y-axis max", value=float(y_col_numeric.max()), format="%.10e")
 
             if st.button("Plot Graph"):
                 x_range = (x_range_min, x_range_max)
@@ -117,8 +119,8 @@ def linegraph():
                 if len(y_columns) != 1:
                     st.warning("Please select only one Y-axis column for integration.")
                 else:
-                    x_vals = data[x_column].values
-                    y_vals = data[y_columns[0]].values
+                    x_vals = pd.to_numeric(data[x_column], errors='coerce').values
+                    y_vals = pd.to_numeric(data[y_columns[0]], errors='coerce').values
                     result = integrate_curve(
                         x_vals, y_vals,
                         log_x=override_log_x,
