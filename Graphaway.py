@@ -7,12 +7,19 @@ from scipy.integrate import simpson, trapezoid
 def read_file(uploaded_file):
     try:
         if st.checkbox("Small space is separating criteria"):
-            return pd.read_csv(uploaded_file, delim_whitespace=True)
+            df = pd.read_csv(uploaded_file, delim_whitespace=True)
         else:
-            return pd.read_csv(uploaded_file)
-    except:
-        st.error("Unsupported file format. Please upload a valid CSV file with tabular data (comma or space-separated).")
+            df = pd.read_csv(uploaded_file)
+
+        # Try converting all columns to numeric if possible
+        for col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='ignore')  # ignore = don't coerce strings
+
+        return df
+    except Exception as e:
+        st.error(f"Error reading file: {e}")
         return None
+
 
 def plot_graph(data, x_column, y_columns, custom_labels, x_log_scale, y_log_scale, x_range, y_range):
     plt.figure(figsize=(10, 6))
