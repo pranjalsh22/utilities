@@ -37,29 +37,35 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups,
 
     used_labels = set()
     color_idx = 0
+    column_colors = {}  # To store color for each column
 
+    # Step 1: Plot color groups (or auto-generated)
     for idx, group in enumerate(color_groups):
         color = plt.cm.tab10(color_idx % 10)
         color_idx += 1
         label = color_labels[idx] if color_labels and idx < len(color_labels) else f"Color group {idx+1}"
         for col in group:
+            column_colors[col] = color  # Save the color for this column
             if label not in used_labels:
                 plt.plot(data[x_column], data[col], marker='o', linestyle='-', color=color, label=label)
                 used_labels.add(label)
             else:
                 plt.plot(data[x_column], data[col], marker='o', linestyle='-', color=color)
 
+    # Step 2: Plot pattern groups (reusing color if already plotted)
     for idx, group in enumerate(pattern_groups):
         linestyle = '-'
         pattern_label = f"Pattern group {idx+1}"
         if pattern_labels and idx < len(pattern_labels):
             pattern_label, pattern_style_key = pattern_labels[idx]
             linestyle = pattern_styles.get(pattern_style_key, '-')
-        
-        color = plt.cm.tab10(color_idx % 10)
-        color_idx += 1
 
         for col in group:
+            color = column_colors.get(col, plt.cm.tab10(color_idx % 10))
+            if col not in column_colors:
+                column_colors[col] = color
+                color_idx += 1
+
             if pattern_label not in used_labels:
                 plt.plot(data[x_column], data[col], marker='o', linestyle=linestyle, color=color, label=pattern_label)
                 used_labels.add(pattern_label)
@@ -180,6 +186,12 @@ def linegraph():
             if st.button("📊 Plot Line Graph"):
                 x_range = (x_range_min, x_range_max)
                 y_range = (y_range_min, y_range_max)
+            
+                # If no color groups defined, assign one group per column
+                if not color_groups:
+                    color_groups = [[col] for col in y_columns]
+                    color_labels = y_columns
+            
                 plot_graph(
                     data, x_column, y_columns,
                     color_groups, pattern_groups,
@@ -188,6 +200,7 @@ def linegraph():
                     x_range, y_range,
                     title, x_axis_label, y_axis_label
                 )
+
 
             with st.expander("🧮 Integration (Area under the Curve)"):
                 int_x_column = st.selectbox("Select X-axis column for integration", columns, index=columns.index(x_column))
