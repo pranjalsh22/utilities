@@ -21,7 +21,6 @@ def read_file(uploaded_file):
         st.error(f"Unsupported file format. Please upload a valid CSV file with tabular data.\nError: {e}")
         return None
 
-
 def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, 
                color_labels, pattern_labels, x_log_scale, y_log_scale, x_range, y_range, 
                title, x_label, y_label):
@@ -35,42 +34,48 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups,
         'dashdot': '-.'
     }
 
-    used_labels = set()
+    # Assign a color to each column (from color_groups or auto)
     color_idx = 0
-    column_colors = {}  # To store color for each column
-
-    # Step 1: Plot color groups (or auto-generated)
+    column_colors = {}
+    column_labels = {}
     for idx, group in enumerate(color_groups):
         color = plt.cm.tab10(color_idx % 10)
         color_idx += 1
-        label = color_labels[idx] if color_labels and idx < len(color_labels) else f"Color group {idx+1}"
+        label = color_labels[idx] if color_labels and idx < len(color_labels) else f"Group {idx+1}"
         for col in group:
-            column_colors[col] = color  # Save the color for this column
-            if label not in used_labels:
-                plt.plot(data[x_column], data[col], marker='o', linestyle='-', color=color, label=label)
-                used_labels.add(label)
-            else:
-                plt.plot(data[x_column], data[col], marker='o', linestyle='-', color=color)
+            column_colors[col] = color
+            column_labels[col] = label
 
-    # Step 2: Plot pattern groups (reusing color if already plotted)
+    # Assign a pattern (linestyle) to each column from pattern_groups
+    column_linestyles = {}
+    column_pattern_labels = {}
     for idx, group in enumerate(pattern_groups):
-        linestyle = '-'
-        pattern_label = f"Pattern group {idx+1}"
+        label = f"Pattern {idx+1}"
+        style = '-'
         if pattern_labels and idx < len(pattern_labels):
-            pattern_label, pattern_style_key = pattern_labels[idx]
-            linestyle = pattern_styles.get(pattern_style_key, '-')
-
+            label, style_key = pattern_labels[idx]
+            style = pattern_styles.get(style_key, '-')
         for col in group:
-            color = column_colors.get(col, plt.cm.tab10(color_idx % 10))
-            if col not in column_colors:
-                column_colors[col] = color
-                color_idx += 1
+            column_linestyles[col] = style
+            column_pattern_labels[col] = label
 
-            if pattern_label not in used_labels:
-                plt.plot(data[x_column], data[col], marker='o', linestyle=linestyle, color=color, label=pattern_label)
-                used_labels.add(pattern_label)
-            else:
-                plt.plot(data[x_column], data[col], marker='o', linestyle=linestyle, color=color)
+    used_labels = set()
+
+    # Plot each Y-column once with its color and (optional) linestyle
+    for col in y_columns:
+        color = column_colors.get(col, plt.cm.tab10(color_idx % 10))
+        if col not in column_colors:
+            color_idx += 1
+        linestyle = column_linestyles.get(col, '-')  # Default to solid
+
+        # Use label from color group or pattern group if available
+        label = column_labels.get(col) or column_pattern_labels.get(col) or col
+
+        if label not in used_labels:
+            plt.plot(data[x_column], data[col], marker='o', linestyle=linestyle, color=color, label=label)
+            used_labels.add(label)
+        else:
+            plt.plot(data[x_column], data[col], marker='o', linestyle=linestyle, color=color)
 
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
@@ -91,7 +96,6 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups,
     plt.grid(True)
     plt.tight_layout()
     st.pyplot(plt)
-
 
 def integrate_curve(x_data, y_data, log_x=False, log_y=False, method='trapezoid'):
     if log_x:
