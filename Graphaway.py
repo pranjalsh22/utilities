@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import simpson, trapezoid
 
-
 def read_file(uploaded_file):
     try:
         if st.checkbox("Small space is separating criteria"):
@@ -12,9 +11,9 @@ def read_file(uploaded_file):
         else:
             df = pd.read_csv(uploaded_file, engine='python')
 
-        # Ensure numeric columns handle scientific notation
-        for col in df.select_dtypes(include=['object']):
-            df[col] = pd.to_numeric(df[col], errors='ignore')
+        # Ensure all object columns are converted to numeric where possible
+        for col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
 
         return df
     except Exception as e:
