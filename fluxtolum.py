@@ -1,2 +1,3 @@
 import streamlit as st
-st.write("flux to lum works")
+def writee():
+  st.write("flux to lum works")
