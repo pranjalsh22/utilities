@@ -1,6 +1,7 @@
-import fluxtolum as flx
-import cloudy_o3line as o3
 
-#purpose=st.selectbox(["process continuum ","find line strength"])
-#if purpose=="process continuum ":
-flx()
+
+purpose=st.selectbox("select",["process continuum ","find line strength"])
+if purpose=="process continuum ":
+  import fluxtolum as flx
+if purpose=="find line strength":
+  import cloudy_o3line as o3
