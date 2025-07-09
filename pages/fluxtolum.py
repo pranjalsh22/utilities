@@ -18,7 +18,7 @@ if uploaded_file is not None:
         st.stop()
 
     st.write("### Preview of Uploaded Data")
-    st.dataframe(df.head())
+    st.dataframe(df)
 
     # Let user pick energy and flux columns
     columns = df.columns.tolist()
