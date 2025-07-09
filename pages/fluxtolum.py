@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import io
 
 # Physical constants
 h = 6.62607015e-27  # Planck constant in erg·s
@@ -14,14 +15,13 @@ st.title("Luminosity & Luminosity Density Calculator from Flux Data")
 uploaded_file = st.file_uploader("Upload a .txt file with tab, comma, or space delimiters", type=["txt"])
 
 if uploaded_file is not None:
-    # Try reading with common delimiters
+    # Try to auto-detect delimiter and load data
     try:
-        df = pd.read_csv(uploaded_file, delim_whitespace=True)
-    except:
-        try:
-            df = pd.read_csv(uploaded_file, sep=',')
-        except:
-            df = pd.read_csv(uploaded_file, sep='\t')
+        content = uploaded_file.getvalue().decode("utf-8")
+        df = pd.read_csv(io.StringIO(content), sep=None, engine='python')
+    except Exception as e:
+        st.error(f"Could not read file: {e}")
+        st.stop()
 
     st.write("### Preview of Uploaded Data")
     st.dataframe(df.head())
@@ -41,8 +41,13 @@ if uploaded_file is not None:
     distance_cm = 10 ** log10_distance
 
     if st.button("Calculate Luminosity"):
+        # Convert columns to float safely
+        df[energy_col] = pd.to_numeric(df[energy_col], errors='coerce')
+        df[flux_col] = pd.to_numeric(df[flux_col], errors='coerce')
+        df = df.dropna(subset=[energy_col, flux_col])
+
         # Extract and convert energy
-        energy_raw = df[energy_col].astype(float)
+        energy_raw = df[energy_col]
 
         if energy_unit == "Rydberg":
             freq = energy_raw * rydberg_to_erg / h  # Convert to Hz
@@ -58,7 +63,7 @@ if uploaded_file is not None:
         wavelength_angstrom = c / freq * 1e8
 
         # Extract flux
-        flux = df[flux_col].astype(float)
+        flux = df[flux_col]
 
         # Convert flux to luminosity density
         if flux_unit == "erg/s/cm²/Hz":
