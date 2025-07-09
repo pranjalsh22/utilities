@@ -1,4 +1,4 @@
-
+import streamlit as st
 
 purpose=st.selectbox("select",("process continuum ","find line strength"))
 if purpose=="process continuum ":
