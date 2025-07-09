@@ -1,6 +1,6 @@
 import streamlit as st
 
-purpose=st.mulltiselectbox("select",("process continuum ","find line strength"))
+purpose=st.multiselectbox("select",("process continuum ","find line strength"))
 if purpose=="process continuum ":
   import fluxtolum 
 if purpose=="find line strength":
