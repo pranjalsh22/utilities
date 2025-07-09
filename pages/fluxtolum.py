@@ -100,6 +100,8 @@ if uploaded_file is not None:
         ax.set_ylabel("Luminosity")
         ax.set_title(f"{lum_type} vs Energy")
         ax.grid(True)
+        ax.set_xscale('log')
+        ax.set_yscale('log')
         st.pyplot(fig)
 
         # Integrate to find bolometric luminosity
