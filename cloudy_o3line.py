@@ -4,8 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import streamlit as st
 from io import StringIO
-import fluxtolum as flx
-flx.writee()
+
 #-------------------- USER DEFINED FUNCTIONS---------------------------------------------
 
 def extract_cloudy_data(file_content):
