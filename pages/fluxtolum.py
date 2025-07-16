@@ -82,16 +82,15 @@ if uploaded_file is not None:
 
         nfn = df[nuFnu]
         flux= np.array([a/b for a,b in zip(nfn,freq)])
-        distance_m = distance_cm * 1e-2
+        
         lum_density = flux * 4 * np.pi * distance_cm ** 2
-        lum_type = "Luminosity (erg/s)?"
+        lum_type = "Luminosity (erg/s)"
 
         df["Luminosity_Density"] = lum_density
         df["Frequency_Hz"] = freq
 
         st.write(f"### Data with {lum_type}")
         df_display = df.copy()
-        #columns = df.columns.tolist()
         for col in df.columns.tolist():
             df_display[col] = df[col].map(lambda x: f"{x:.3e}")
         
@@ -101,7 +100,7 @@ if uploaded_file is not None:
         fig, ax = plt.subplots()
         ax.plot(energy_raw, lum_density, label=lum_type)
         ax.set_xlabel("Energy (Rydberg)")
-        ax.set_ylabel("Luminosity")
+        ax.set_ylabel("Luminosity density")
         ax.set_title(f"{lum_type} vs Energy")
         ax.set_xscale('log')
         ax.set_yscale('log')
@@ -110,5 +109,5 @@ if uploaded_file is not None:
         st.pyplot(fig)
 
         # Step 8: Integrate
-        total_luminosity = np.trapz(df["Luminosity_Density"], df[energy_col])
+        total_luminosity = np.trapz(lum_density, freq)
         st.write(f"### Total Bolometric Luminosity: {total_luminosity:.3e} erg/s")
