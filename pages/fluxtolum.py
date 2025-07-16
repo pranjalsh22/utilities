@@ -86,13 +86,13 @@ if uploaded_file is not None:
 
         st.write(f"### Data with {lum_type}")
         df_display = df.copy()
-        for col in [("Frequency_Hz"), ("Luminosity_Density"), (energy_col)]:
+        #columns = df.columns.tolist()
+        for col in df.columns.tolist():
             df_display[col] = df[col].map(lambda x: f"{x:.3e}")
         
         st.write(f"### Data with {lum_type} (scientific notation)")
         st.dataframe(df_display)
 
-        # Step 7: Plot
         fig, ax = plt.subplots()
         ax.plot(energy_raw, lum_density, label=lum_type)
         ax.set_xlabel("Energy (Rydberg)")
