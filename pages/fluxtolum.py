@@ -23,7 +23,7 @@ if uploaded_file is not None:
 
     columns = df.columns.tolist()
     energy_col = st.selectbox("Select the column for energy", columns)
-    nuFnu = st.selectbox("Select the column for nuFnu", columns)
+    nuFnu = st.selectbox("Select the column for nuFnu", [c for c in columns if c != energy_col])
 
  #------------------------------------------------GIVE DISTANCE------------------------------------------------
 
@@ -85,7 +85,12 @@ if uploaded_file is not None:
         df["Frequency_Hz"] = freq
 
         st.write(f"### Data with {lum_type}")
-        st.dataframe(df)
+        df_display = df.copy()
+        for col, unit in [("Frequency_Hz", "Hz"), ("Luminosity_Density", "erg/s/Hz"), (energy_col, "Ryd")]:
+            df_display[col] = df[col].map(lambda x: f"{x:.3e} {unit}")
+        
+        st.write(f"### Data with {lum_type}")
+        st.dataframe(df_display)
 
         # Step 7: Plot
         fig, ax = plt.subplots()
