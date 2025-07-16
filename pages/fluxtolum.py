@@ -76,7 +76,7 @@ if uploaded_file is not None:
         freq = energy_raw * rydberg_to_erg / h  # Hz
 
         nfn = df[nuFnu]
-        flux= [a/b for a,b in nfn,freq]
+        flux= [a/b for a,b in zip(nfn,freq)]
         distance_m = distance_cm * 1e-2
         lum_density = flux * 4 * np.pi * distance_cm ** 2
         lum_type = "Luminosity (erg/s)?"
