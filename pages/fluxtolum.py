@@ -81,8 +81,14 @@ if uploaded_file is not None:
         freq = energy_raw * rydberg_to_erg / h  # Hz
 
         nfn = df[nuFnu]
-        flux= np.array([a/b for a,b in zip(nfn,freq)])
-        
+        #--------------
+        #nfn just means second collumn to be processed. giving meaning here :
+        ohwait = st.toggle("is it nuFnu instead of Fnu")
+        if ohwait:
+            flux= np.array([a/b for a,b in zip(nfn,freq)])
+        else:
+            flux=np.array(nfn)
+        #--------------
         lum_density = flux * 4 * np.pi * distance_cm ** 2
         lum_type = "Luminosity density (erg/s/Hz)"
 
