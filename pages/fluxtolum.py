@@ -84,7 +84,7 @@ if uploaded_file is not None:
         flux= np.array([a/b for a,b in zip(nfn,freq)])
         
         lum_density = flux * 4 * np.pi * distance_cm ** 2
-        lum_type = "Luminosity (erg/s)"
+        lum_type = "Luminosity density (erg/s/Hz)"
 
         df["Luminosity_Density"] = lum_density
         df["Frequency_Hz"] = freq
@@ -108,6 +108,6 @@ if uploaded_file is not None:
         ax.legend()
         st.pyplot(fig)
 
-        # Step 8: Integrate
+     
         total_luminosity = np.trapz(lum_density, freq)
         st.write(f"### Total Bolometric Luminosity: {total_luminosity:.3e} erg/s")
