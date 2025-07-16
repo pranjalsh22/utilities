@@ -4,14 +4,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import io
 
-# App title
 st.title("Luminosity & Luminosity Density Calculator from Flux Data")
 
-# File uploader
+#-------------------------------------------------READ FILE------------------------------------------------
 uploaded_file = st.file_uploader("Upload a .txt file with tab, comma, or space delimiters", type=["txt"])
 
 if uploaded_file is not None:
-    # Try to auto-detect delimiter and load data
     try:
         content = uploaded_file.getvalue().decode("utf-8")
         df = pd.read_csv(io.StringIO(content), sep=None, engine='python')
@@ -21,18 +19,23 @@ if uploaded_file is not None:
 
     st.header("# Uploaded Data")
     st.dataframe(df)
+#------------------------------------------------SELECT COLUMNS------------------------------------------------
 
     columns = df.columns.tolist()
     energy_col = st.selectbox("Select the column for energy", columns)
-    flux_col = st.selectbox("Select the column for flux", columns)
-    
+    nuFnu = st.selectbox("Select the column for nuFnu", columns)
+
+ #------------------------------------------------GIVE DISTANCE------------------------------------------------
+
     islog = st.toggle("input in log value?",value=True)
     if islog:
         log10_distance = st.number_input("Enter the distance in log10(cm)", value=27.0)
         distance_cm = 10 ** log10_distance
     else:
         distance_cm =st.number_input("Enter the distance in cm", value=1e27)
+#-------------------------------------------------FIND LUMINOSIY------------------------------------------------
     if st.button("Calculate Luminosity"):
+        #- - - - - - - - - - - - - - - - - - - -CHECK VALID ENTERIES- - - - - - - - - - - - - - - - 
         energy_numeric = pd.to_numeric(df[energy_col], errors='coerce')
         invalid_energy = df[energy_numeric.isna()]
         if not invalid_energy.empty:
@@ -41,16 +44,17 @@ if uploaded_file is not None:
             st.dataframe(invalid_energy)
             st.stop()
 
-        flux_numeric = pd.to_numeric(df[flux_col], errors='coerce')
-        invalid_flux = df[flux_numeric.isna()]
+        nuFnu_numeric = pd.to_numeric(df[nuFnu], errors='coerce')
+        invalid_flux = df[nuFnu_numeric.isna()]
         if not invalid_flux.empty:
-            st.error(f"Non-numeric values found in '{flux_col}' at rows: {invalid_flux.index.tolist()}")
+            st.error(f"Non-numeric values found in '{nuFnu}' at rows: {invalid_flux.index.tolist()}")
             st.write("Problematic rows (flux):")
             st.dataframe(invalid_flux)
             st.stop()
 
         df[energy_col] = energy_numeric
-        df[flux_col] = flux_numeric
+        df[nuFnu] = nuFnu_numeric
+ #- - - - - - - - - - - - - - - - - - - -CHECK MONOTONICALLY INCREASING- - - - - - - - - - - - - - - - 
 
         if not df[energy_col].is_monotonic_increasing:
             unsorted_mask = df[energy_col] != df[energy_col].sort_values().values
@@ -63,14 +67,16 @@ if uploaded_file is not None:
             df = df.sort_values(by=energy_col).reset_index(drop=True)
         else:
             st.info("Energy values are already sorted.")
+        #- - - - - - - - - - - - - - - - - - - -CONVERT UNITS- - - - - - - - - - - - - - - - 
 
         rydberg_to_erg = 2.1798723611035e-11
         h = 6.62607015e-27
 
-        energy_raw = df[energy_col]
+        energy_raw = df[energy_col] #RYDBERG
         freq = energy_raw * rydberg_to_erg / h  # Hz
 
-        flux = df[flux_col]
+        nfn = df[nuFnu]
+        flux= [a/b for a,b in nfn,freq]
         distance_m = distance_cm * 1e-2
         lum_density = flux * 4 * np.pi * distance_cm ** 2
         lum_type = "Luminosity (erg/s)?"
