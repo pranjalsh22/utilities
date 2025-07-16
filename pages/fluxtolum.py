@@ -19,20 +19,20 @@ if uploaded_file is not None:
         st.error(f"Could not read file: {e}")
         st.stop()
 
-    st.write("### Preview of Uploaded Data")
+    st.Header("# Uploaded Data")
     st.dataframe(df)
 
-    # Let user pick energy and flux columns
     columns = df.columns.tolist()
     energy_col = st.selectbox("Select the column for energy", columns)
     flux_col = st.selectbox("Select the column for flux", columns)
-
-    # Distance input
-    log10_distance = st.number_input("Enter the distance in log10(cm)", value=27.0)
-    distance_cm = 10 ** log10_distance
-
+    
+    islog = st.toggle("input in log value?",value=True)
+    if islog:
+        log10_distance = st.number_input("Enter the distance in log10(cm)", value=27.0)
+        distance_cm = 10 ** log10_distance
+    else:
+        distance_cm =st.number_input("Enter the distance in cm", value=1e27)
     if st.button("Calculate Luminosity"):
-        # Step 1: Validate and convert energy column
         energy_numeric = pd.to_numeric(df[energy_col], errors='coerce')
         invalid_energy = df[energy_numeric.isna()]
         if not invalid_energy.empty:
@@ -41,7 +41,6 @@ if uploaded_file is not None:
             st.dataframe(invalid_energy)
             st.stop()
 
-        # Step 2: Validate and convert flux column
         flux_numeric = pd.to_numeric(df[flux_col], errors='coerce')
         invalid_flux = df[flux_numeric.isna()]
         if not invalid_flux.empty:
@@ -50,11 +49,9 @@ if uploaded_file is not None:
             st.dataframe(invalid_flux)
             st.stop()
 
-        # Step 3: Assign numeric values back
         df[energy_col] = energy_numeric
         df[flux_col] = flux_numeric
 
-        # Step 4: Check if data needs sorting
         if not df[energy_col].is_monotonic_increasing:
             unsorted_mask = df[energy_col] != df[energy_col].sort_values().values
             unsorted_rows = df[unsorted_mask]
@@ -63,22 +60,20 @@ if uploaded_file is not None:
             st.write("### ⚠️ Rows out of order (before sorting):")
             st.dataframe(unsorted_rows)
 
-            # Apply sorting
             df = df.sort_values(by=energy_col).reset_index(drop=True)
         else:
             st.info("Energy values are already sorted.")
 
-        # Step 5: Physical constants and frequency conversion
         rydberg_to_erg = 2.1798723611035e-11
         h = 6.62607015e-27
 
         energy_raw = df[energy_col]
         freq = energy_raw * rydberg_to_erg / h  # Hz
 
-        # Step 6: Compute luminosity
         flux = df[flux_col]
+        distance_m = distance_cm * 1e-2
         lum_density = flux * 4 * np.pi * distance_cm ** 2
-        lum_type = "Luminosity (erg/s)"
+        lum_type = "Luminosity (erg/s)?"
 
         df["Luminosity_Density"] = lum_density
         df["Frequency_Hz"] = freq
