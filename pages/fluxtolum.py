@@ -89,7 +89,7 @@ if uploaded_file is not None:
         for col, unit in [("Frequency_Hz", "Hz"), ("Luminosity_Density", "erg/s/Hz"), (energy_col, "Ryd")]:
             df_display[col] = df[col].map(lambda x: f"{x:.3e} {unit}")
         
-        st.write(f"### Data with {lum_type}")
+        st.write(f"### Data with {lum_type} (scientific notation)")
         st.dataframe(df_display)
 
         # Step 7: Plot
