@@ -86,8 +86,8 @@ if uploaded_file is not None:
 
         st.write(f"### Data with {lum_type}")
         df_display = df.copy()
-        for col, unit in [("Frequency_Hz", "Hz"), ("Luminosity_Density", "erg/s/Hz"), (energy_col, "Ryd")]:
-            df_display[col] = df[col].map(lambda x: f"{x:.3e} {unit}")
+        for col in [("Frequency_Hz"), ("Luminosity_Density"), (energy_col)]:
+            df_display[col] = df[col].map(lambda x: f"{x:.3e}")
         
         st.write(f"### Data with {lum_type} (scientific notation)")
         st.dataframe(df_display)
