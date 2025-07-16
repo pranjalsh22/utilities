@@ -19,7 +19,7 @@ if uploaded_file is not None:
         st.error(f"Could not read file: {e}")
         st.stop()
 
-    st.Header("# Uploaded Data")
+    st.header("# Uploaded Data")
     st.dataframe(df)
 
     columns = df.columns.tolist()
