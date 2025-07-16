@@ -29,7 +29,7 @@ if uploaded_file is not None:
 
     islog = st.toggle("input in log value?",value=True)
     if islog:
-        log10_distance = st.number_input("Enter the distance in log10(cm)", value=16.4894)
+        log10_distance = st.number_input("Enter the distance in log10(cm)", value=16.49)
         distance_cm = 10 ** log10_distance
     else:
         distance_cm =st.number_input("Enter the distance in cm", value=3.086e18)
