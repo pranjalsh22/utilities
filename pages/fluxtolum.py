@@ -19,9 +19,8 @@ if uploaded_file is not None:
 
     st.header("# Uploaded Data")
     df_display = df.copy()
-        #columns = df.columns.tolist()
-        for col in df.columns.tolist():
-            df_display[col] = df[col].map(lambda x: f"{x:.3e}")
+    for col in df.columns.tolist():
+        df_display[col] = df[col].map(lambda x: f"{x:.3e}")
         
     st.dataframe(df_display)
 
