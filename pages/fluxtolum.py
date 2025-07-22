@@ -31,6 +31,7 @@ if uploaded_file is not None:
     nuFnu = st.selectbox("Select the column for nuFnu", [c for c in columns if c != energy_col])
 
  #------------------------------------------------GIVE DISTANCE------------------------------------------------
+    ohwait = st.toggle("is it nuFnu instead of Fnu")
 
     islog = st.toggle("input in log value?",value=True)
     if islog:
@@ -83,7 +84,6 @@ if uploaded_file is not None:
         nfn = df[nuFnu]
         #--------------
         #nfn just means second collumn to be processed. giving meaning here :
-        ohwait = st.toggle("is it nuFnu instead of Fnu")
         if ohwait:
             flux= np.array([a/b for a,b in zip(nfn,freq)])
         else:
