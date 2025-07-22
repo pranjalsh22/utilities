@@ -116,4 +116,14 @@ if uploaded_file is not None:
 
      
         total_luminosity = np.trapz(lum_density, freq)
-        st.write(f"### Total Bolometric Luminosity: {total_luminosity:.3e} erg/s")
+        
+        def integrate_curve(x, y,a=1,b=1): 
+            integral = 0.0
+            for i in range(1,len(x)):
+                if y[i-1]!=np.inf and y[i]!=np.inf:
+                    dx = (x[i] - x[i-1]) #/a
+                    dy = (np.float128(y[i]) + np.float128(y[i-1])) #/b
+                    integral +=  (np.float128(dy)*np.float128(dx))#*(a*b)
+            return integral
+        st.success(f"### Total Bolometric Luminosity by np: {total_luminosity:.3e} erg/s")
+        st.info(f' Total Bolometric Luminosity by dxdy : {integrate_curve(lum_density, freq)} erg/s')
