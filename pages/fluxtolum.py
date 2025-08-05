@@ -60,7 +60,7 @@ if uploaded_file is not None:
             st.stop()
 
         df[energy_col] = energy_numeric
-        df[nuFnu] = nuFnu_numeric
+        df[column2] = nuFnu_numeric
  #- - - - - - - - - - - - - - - - - - - -CHECK MONOTONICALLY INCREASING- - - - - - - - - - - - - - - - 
 
         if not df[energy_col].is_monotonic_increasing:
