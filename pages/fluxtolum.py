@@ -51,7 +51,7 @@ if uploaded_file is not None:
             st.dataframe(invalid_energy)
             st.stop()
 
-        nuFnu_numeric = pd.to_numeric(df[nuFnu], errors='coerce')
+        nuFnu_numeric = pd.to_numeric(df[column2], errors='coerce')
         invalid_flux = df[nuFnu_numeric.isna()]
         if not invalid_flux.empty:
             st.error(f"Non-numeric values found in '{nuFnu}' at rows: {invalid_flux.index.tolist()}")
