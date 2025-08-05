@@ -25,20 +25,21 @@ if uploaded_file is not None:
     st.dataframe(df_display)
 
 #------------------------------------------------SELECT COLUMNS------------------------------------------------
-
+    ohwait = st.selectbox("pick",["nuFnu","Fnu","Lnu","nuLnu"])
     columns = df.columns.tolist()
     energy_col = st.selectbox("Select the column for energy", columns)
-    nuFnu = st.selectbox("Select the column for nuFnu", [c for c in columns if c != energy_col])
+    column2 = st.selectbox("Select the column for nuFnu", [c for c in columns if c != energy_col])
 
  #------------------------------------------------GIVE DISTANCE------------------------------------------------
-    ohwait = st.toggle("is it nuFnu instead of Fnu")
-
-    islog = st.toggle("input in log value?",value=True)
-    if islog:
-        log10_distance = st.number_input("Enter the distance in log10(cm)", value=16.49)
-        distance_cm = 10 ** log10_distance
-    else:
-        distance_cm =st.number_input("Enter the distance in cm", value=3.086e18)
+   
+    def distance():
+        islog = st.toggle("input in log value?",value=True)
+        if islog:
+            log10_distance = st.number_input("Enter the distance in log10(cm)", value=16.49)
+            distance_cm = 10 ** log10_distance
+        else:
+            distance_cm =st.number_input("Enter the distance in cm", value=3.086e18)
+        return distance_cm
 #-------------------------------------------------FIND LUMINOSIY------------------------------------------------
     if st.button("Calculate Luminosity"):
         #- - - - - - - - - - - - - - - - - - - -CHECK VALID ENTERIES- - - - - - - - - - - - - - - - 
@@ -80,18 +81,29 @@ if uploaded_file is not None:
 
         energy_raw = df[energy_col] #RYDBERG
         freq = energy_raw * rydberg_to_erg / h  # Hz
-
-        nfn = df[nuFnu]
-        #--------------
+        
+        #----------------------PROCESSING COLUMN 2-------------------------------
+        c2 = df[column2]
+        
         #nfn just means second collumn to be processed. giving meaning here :
-        if ohwait:
-            flux= np.array([a/b for a,b in zip(nfn,freq)])
-        else:
-            flux=np.array(nfn)
+        if ohwait=="nuFnu":
+            distance_cm = distance()
+            flux= np.array([a/b for a,b in zip(c2,freq)])
+            lum_density = flux * 4 * np.pi * distance_cm ** 2
+            lum_type = "Luminosity density (erg/s/Hz)"
+        if ohwait=="Fnu":
+            distance_cm = distance()
+            flux=np.array(c2)
+            lum_density = flux * 4 * np.pi * distance_cm ** 2
+            lum_type = "Luminosity density (erg/s/Hz)"
+        if ohwait=="Lnu":
+            lum_density = np.array(c2)
+            lum_type = "Luminosity density (erg/s/Hz)"
+        if ohwait=="nuLnu":
+            lum_density = np.array([a/b for a,b in zip(c2,freq)])
+            lum_type = "Luminosity density (erg/s/Hz)"
         #--------------
-        lum_density = flux * 4 * np.pi * distance_cm ** 2
-        lum_type = "Luminosity density (erg/s/Hz)"
-
+        
         df["Luminosity_Density"] = lum_density
         df["Frequency_Hz"] = freq
 
