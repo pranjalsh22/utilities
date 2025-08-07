@@ -6,7 +6,7 @@ st.set_page_config(page_title="Class Counter", layout="centered")
 
 st.title("📚 Class Counter App")
 
-st.markdown("This app estimates how many classes will be completed by the end of the semester based on weekly schedule and holidays.")
+st.markdown("This app estimates how many classes will be completed by the end of the semester based on your weekly schedule and holidays.")
 
 # Step 1: Subject setup
 st.header("Step 1: Define Subjects and Weekly Schedule")
@@ -42,10 +42,27 @@ st.header("Step 2: Set Date Range")
 start_date = st.date_input("Start date", value=date.today())
 end_date = st.date_input("End date", value=date.today() + timedelta(weeks=15))
 
-# Step 3: Days off
-st.header("Step 3: Enter Off Days (Holidays, Semester Breaks)")
+# Step 3: Days off (improved calendar-style selection)
+st.header("Step 3: Add Days Off (Holidays, Breaks)")
 
-off_days = st.date_input("Select holidays or breaks (no classes will be counted on these days)", [])
+# Keep off days in session state
+if "off_days" not in st.session_state:
+    st.session_state.off_days = set()
+
+new_off_day = st.date_input("📅 Pick a day off", value=date.today())
+
+col1, col2 = st.columns(2)
+if col1.button("➕ Add this day off"):
+    st.session_state.off_days.add(new_off_day)
+if col2.button("🗑️ Clear all days off"):
+    st.session_state.off_days.clear()
+
+if st.session_state.off_days:
+    sorted_days = sorted(st.session_state.off_days)
+    st.markdown("### 📌 Selected Days Off:")
+    st.write(sorted_days)
+else:
+    st.info("No off days selected yet.")
 
 # Step 4: Result
 st.header("📊 Result: Total Classes by End Date")
@@ -55,7 +72,7 @@ if st.button("Calculate"):
     
     current_date = start_date
     while current_date <= end_date:
-        if current_date in off_days:
+        if current_date in st.session_state.off_days:
             current_date += timedelta(days=1)
             continue
         weekday = current_date.strftime("%A")
