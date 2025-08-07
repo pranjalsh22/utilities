@@ -8,7 +8,7 @@ st.title("📚 Class Counter App")
 
 st.markdown("This app estimates how many classes will be completed by the end of the semester based on weekly schedule and holidays.")
 
-# Subject setup
+# Step 1: Subject setup
 st.header("Step 1: Define Subjects and Weekly Schedule")
 
 num_subjects = st.number_input("How many subjects?", min_value=1, max_value=10, value=3, step=1)
@@ -22,29 +22,36 @@ for i in range(num_subjects):
     weekly_schedule = {}
     cols = st.columns(5)
     for j, day in enumerate(days):
-        weekly_schedule[day] = cols[j].number_input(f"{day}", min_value=0, max_value=10, value=0, key=f"{subject_name}_{day}")
-    completed = st.number_input(f"Number of classes already completed in {subject_name}", min_value=0, value=0, key=f"done_{subject_name}")
-    subjects[subject_name] = {
+        unique_key = f"subject_{i}_day_{day}"
+        weekly_schedule[day] = cols[j].number_input(
+            f"{day}", min_value=0, max_value=10, value=0, key=unique_key
+        )
+    completed = st.number_input(
+        f"Number of classes already completed in {subject_name or f'Subject {i+1}'}",
+        min_value=0, value=0, key=f"done_{i}"
+    )
+    subjects[f"Subject_{i}_{subject_name}"] = {
+        "name": subject_name or f"Subject {i+1}",
         "weekly_schedule": weekly_schedule,
         "completed": completed
     }
 
-# Date inputs
+# Step 2: Date inputs
 st.header("Step 2: Set Date Range")
 
 start_date = st.date_input("Start date", value=date.today())
 end_date = st.date_input("End date", value=date.today() + timedelta(weeks=15))
 
-# Days off
+# Step 3: Days off
 st.header("Step 3: Enter Off Days (Holidays, Semester Breaks)")
 
 off_days = st.date_input("Select holidays or breaks (no classes will be counted on these days)", [])
 
-# Count logic
+# Step 4: Result
 st.header("📊 Result: Total Classes by End Date")
 
 if st.button("Calculate"):
-    total_classes = {subject: 0 for subject in subjects}
+    total_classes = {key: 0 for key in subjects}
     
     current_date = start_date
     while current_date <= end_date:
@@ -52,23 +59,22 @@ if st.button("Calculate"):
             current_date += timedelta(days=1)
             continue
         weekday = current_date.strftime("%A")
-        for subject, info in subjects.items():
-            weekly_schedule = info["weekly_schedule"]
-            total_classes[subject] += weekly_schedule.get(weekday, 0)
+        for key, info in subjects.items():
+            total_classes[key] += info["weekly_schedule"].get(weekday, 0)
         current_date += timedelta(days=1)
 
     # Display results
     results = []
-    for subject, info in subjects.items():
+    for key, info in subjects.items():
         done = info["completed"]
-        total = total_classes[subject]
+        total = total_classes[key]
         remaining = max(total - done, 0)
         results.append({
-            "Subject": subject,
+            "Subject": info["name"],
             "Classes Completed": done,
             "Expected by End Date": total,
             "Remaining": remaining
         })
 
     df = pd.DataFrame(results)
-    st.dataframe(df)
+    st.dataframe(df, use_container_width=True)
