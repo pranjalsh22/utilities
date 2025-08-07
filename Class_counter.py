@@ -42,10 +42,10 @@ st.header("Step 2: Set Date Range")
 start_date = st.date_input("Start date", value=date.today())
 end_date = st.date_input("End date", value=date.today() + timedelta(weeks=15))
 
-# Step 3: Days off (improved calendar-style selection)
+# Step 3: Days off (calendar-based)
 st.header("Step 3: Add Days Off (Holidays, Breaks)")
 
-# Keep off days in session state
+# Initialize off_days in session_state
 if "off_days" not in st.session_state:
     st.session_state.off_days = set()
 
@@ -65,11 +65,11 @@ else:
     st.info("No off days selected yet.")
 
 # Step 4: Result
-st.header("📊 Result: Total Classes by End Date")
+st.header("📊 Result: Total Classes Completed by End Date")
 
 if st.button("Calculate"):
-    total_classes = {key: 0 for key in subjects}
-    
+    total_classes_from_today = {key: 0 for key in subjects}
+
     current_date = start_date
     while current_date <= end_date:
         if current_date in st.session_state.off_days:
@@ -77,20 +77,20 @@ if st.button("Calculate"):
             continue
         weekday = current_date.strftime("%A")
         for key, info in subjects.items():
-            total_classes[key] += info["weekly_schedule"].get(weekday, 0)
+            total_classes_from_today[key] += info["weekly_schedule"].get(weekday, 0)
         current_date += timedelta(days=1)
 
     # Display results
     results = []
     for key, info in subjects.items():
-        done = info["completed"]
-        total = total_classes[key]
-        remaining = max(total - done, 0)
+        completed = info["completed"]
+        expected = total_classes_from_today[key]
+        total_by_end = completed + expected
         results.append({
             "Subject": info["name"],
-            "Classes Completed": done,
-            "Expected by End Date": total,
-            "Remaining": remaining
+            "Classes Already Completed": completed,
+            "Classes Expected (from today)": expected,
+            "Total Classes by End Date": total_by_end
         })
 
     df = pd.DataFrame(results)
