@@ -6,7 +6,11 @@ st.set_page_config(page_title="Class Counter", layout="centered")
 
 st.title("📚 Class Counter App")
 
-st.markdown("This app estimates how many classes will be completed by the end of the semester based on your weekly schedule and holidays.")
+st.markdown(
+    "This app estimates how many classes you'll complete by the end of the semester. "
+    "You can input the number of weekly classes for each subject, log classes already done, "
+    "and add any holidays or off days to exclude from the count."
+)
 
 # Step 1: Subject setup
 st.header("Step 1: Define Subjects and Weekly Schedule")
@@ -65,10 +69,10 @@ else:
     st.info("No off days selected yet.")
 
 # Step 4: Result
-st.header("📊 Result: Total Classes Completed by End Date")
+st.header("📊 Result: Projected Class Counts by End Date")
 
 if st.button("Calculate"):
-    total_classes_from_today = {key: 0 for key in subjects}
+    total_future_classes = {key: 0 for key in subjects}
 
     current_date = start_date
     while current_date <= end_date:
@@ -77,19 +81,19 @@ if st.button("Calculate"):
             continue
         weekday = current_date.strftime("%A")
         for key, info in subjects.items():
-            total_classes_from_today[key] += info["weekly_schedule"].get(weekday, 0)
+            total_future_classes[key] += info["weekly_schedule"].get(weekday, 0)
         current_date += timedelta(days=1)
 
     # Display results
     results = []
     for key, info in subjects.items():
         completed = info["completed"]
-        expected = total_classes_from_today[key]
+        expected = total_future_classes[key]
         total_by_end = completed + expected
         results.append({
             "Subject": info["name"],
             "Classes Already Completed": completed,
-            "Classes Expected (from today)": expected,
+            "Classes Expected (From Today)": expected,
             "Total Classes by End Date": total_by_end
         })
 
