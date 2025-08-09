@@ -138,4 +138,4 @@ if uploaded_file is not None:
                     integral +=  (np.float128(dy)*np.float128(dx))#*(a*b)
             return integral
         st.success(f"### Total Bolometric Luminosity by np: {total_luminosity:.3e} erg/s")
-        st.info(f' Total Bolometric Luminosity by dxdy : {integrate_curve(freq,lum_density)} erg/s')
+        #st.info(f' Total Bolometric Luminosity by dxdy : {integrate_curve(freq,lum_density)} erg/s')
