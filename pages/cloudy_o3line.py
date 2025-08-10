@@ -13,25 +13,30 @@ def extract_cloudy_data(file_content):
     labels = []
 
     cleaned = re.sub(r'\b\w+\.\.+\s*', ' ', file_content)
-
     normalized = re.sub(r'\s+', ' ', cleaned)
 
-    pattern = re.compile(r"([\w\s]+?)\s+([\d.]+)(A|m)\s+([\d.eE+-]+)\s+([\d.eE+-]+)")
+    # Updated regex: accept * in second luminosity field
+    pattern = re.compile(r"([\w\s]+?)\s+([\d.]+)(A|m)\s+([\d.eE+-]+)\s+([\d.eE+-]+|\*+)")
 
     matches = pattern.findall(normalized)
 
-
-    
     for match in matches:
         label, value, unit, lum1, lum2 = match
         try:
+            # Skip if first luminosity value is corrupted (contains *)
+            if '*' in lum1:
+                continue
+
             wavelength = float(value)
             luminosity = float(lum1)
+
             if unit == "m":
                 wavelength *= 1e4  # convert microns to angstroms
+
             labels.append(label.strip())
             wavelengths.append(wavelength)
             luminosities.append(luminosity)
+
         except ValueError:
             continue
 
