@@ -4,13 +4,8 @@ from datetime import date, timedelta
 
 st.set_page_config(page_title="Class Counter", layout="centered")
 
-st.title("📚 Class Counter App")
+st.title(" Class Counter by Pranjal")
 
-st.markdown(
-    "This app estimates how many classes you'll complete by the end of the semester. "
-    "You can input the number of weekly classes for each subject, log classes already done, "
-    "and add any holidays or off days to exclude from the count."
-)
 
 # Step 1: Subject setup
 st.header("Step 1: Define Subjects and Weekly Schedule")
@@ -47,9 +42,8 @@ start_date = st.date_input("Start date", value=date.today())
 end_date = st.date_input("End date", value=date.today() + timedelta(weeks=15))
 
 # Step 3: Days off (calendar-based)
-st.header("Step 3: Add Days Off (Holidays, Breaks)")
+st.header("Step 3: Add Days Off (Holidays, Breaks). Select the date and clic on add")
 
-# Initialize off_days in session_state
 if "off_days" not in st.session_state:
     st.session_state.off_days = set()
 
@@ -68,8 +62,8 @@ if st.session_state.off_days:
 else:
     st.info("No off days selected yet.")
 
-# Step 4: Result
-st.header("📊 Result: Projected Class Counts by End Date")
+
+st.header(" Result: Projected Class Counts by End Date")
 
 if st.button("Calculate"):
     total_future_classes = {key: 0 for key in subjects}
