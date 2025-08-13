@@ -5,6 +5,16 @@ import matplotlib.pyplot as plt
 import io
 
 st.title("Luminosity & Luminosity Density Calculator from Flux Data")
+#-------------------------------------------------user define func------------------------------------------------
+
+def snip_data(x, y, x1, x2):
+    x = np.array(x)
+    y = np.array(y)
+    mask = (x >= x1) & (x <= x2)
+    x_snipped = x[mask]
+    y_snipped = y[mask]
+
+    return x_snipped, y_snipped
 
 #-------------------------------------------------READ FILE------------------------------------------------
 uploaded_file = st.file_uploader("Upload a .txt file with tab, comma, or space delimiters", type=["txt"])
