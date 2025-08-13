@@ -151,13 +151,13 @@ if uploaded_file is not None:
                     ""
                     "Net luminosity from"
                 with col2:
-                    x1=st.number_input("",value=FO1,format='%e')  
+                    x1=st.number_input("",value=0.228,format='%e')  
                 with col3:
                     ""
                     ""
                     "Hz to"
                 with col4:
-                    x2=st.number_input("",value=FO2,format='%e') 
+                    x2=st.number_input("",value=9.12,format='%e') 
                 with col5:
                     ""
                     ""
@@ -169,16 +169,16 @@ if uploaded_file is not None:
                        r'$ \bar{L} =\frac{ {\int_{\nu_1}^{\nu_2}}{L_\nu} d\nu} {\nu_2-\nu_1} = $' +f" {L_snipped/(x2-x1):e} erg/s/Hz")
         
         else:
-            frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density, 3e12, 4.3e14)
+            frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density, 9.12e-4, 0.0912)
             L_IR = np.trapz(luminosities_snipped,frequencies_snipped)
         
-            frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density, 4.3e14, 7.5e14)
+            frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density, 0.0912, 0.228)
             L_visible =np.trapz(luminosities_snipped,frequencies_snipped)
         
-            frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density,7.5e14, 3e16)
+            frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density,0.228, 9.12)
             L_UV =np.trapz(luminosities_snipped,frequencies_snipped)
         
-            frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density,3e16, 3e19)
+            frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density,9.12, 9120)
             L_xray = np.trapz(luminosities_snipped,frequencies_snipped)
         
             df=pd.DataFrame({"Range":["IR","Visible","UV","X-ray"],"Luminosity(watts)":[L_IR,L_visible,L_UV,L_xray]})
