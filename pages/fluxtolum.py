@@ -156,47 +156,22 @@ if uploaded_file is not None:
         total_luminosity = np.trapz(lum_density, freq)
 
         st.success(f"### Total Bolometric Luminosity by np: {total_luminosity:.3e} erg/s")
-        if st.checkbox("For custom range of frequency",value=True):
-                #snipped net luminosity
-                col1,col2,col3,col4,col5 =st.columns([0.3,0.3,0.1,0.3,0.4])
-                with col1:
-                    ""
-                    ""
-                    "Net luminosity from"
-                with col2:
-                    x1=st.number_input("",value=0.228,format='%e')  
-                with col3:
-                    ""
-                    ""
-                    "Hz to"
-                with col4:
-                    x2=st.number_input("",value=9.12,format='%e') 
-                with col5:
-                    ""
-                    ""
-                    "Hz"
-                frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density, x1, x2)
-                L_snipped = np.trapz(luminosities_snipped,frequencies_snipped)
-                st.success(f"Net Luminosity from "+ r'$ \nu_1  =  $'+f" {x1:.2e} Hz to " + r"$ \nu_2  =  $"+ f"{x2:.2e} Hz  is {L_snipped} Watts")
-                st.success(f"Average Luminosity density "+\
-                       r'$ \bar{L} =\frac{ {\int_{\nu_1}^{\nu_2}}{L_\nu} d\nu} {\nu_2-\nu_1} = $' +f" {L_snipped/(x2-x1):e} erg/s/Hz")
         
-        else:
-            frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density, 9.12e-4, 0.0912)
-            L_IR = np.trapz(luminosities_snipped,frequencies_snipped)
+        frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density, 9.12e-4, 0.0912)
+        L_IR = np.trapz(luminosities_snipped,frequencies_snipped)
+
+        frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density, 0.0912, 0.228)
+        L_visible =np.trapz(luminosities_snipped,frequencies_snipped)
         
-            frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density, 0.0912, 0.228)
-            L_visible =np.trapz(luminosities_snipped,frequencies_snipped)
+        frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density,0.228, 9.12)
+        L_UV =np.trapz(luminosities_snipped,frequencies_snipped)
         
-            frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density,0.228, 9.12)
-            L_UV =np.trapz(luminosities_snipped,frequencies_snipped)
+        frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density,9.12, 9120)
+        L_xray = np.trapz(luminosities_snipped,frequencies_snipped)
         
-            frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density,9.12, 9120)
-            L_xray = np.trapz(luminosities_snipped,frequencies_snipped)
-        
-            df=pd.DataFrame({"Range":["IR","Visible","UV","X-ray"],"Luminosity(watts)":[L_IR,L_visible,L_UV,L_xray]})
+        df=pd.DataFrame({"Range":["IR","Visible","UV","X-ray"],"Luminosity(watts)":[L_IR,L_visible,L_UV,L_xray]})
                 # Convert float128 to float64 in DataFrame
-            df['Luminosity(erg/s)'] = df['Luminosity(erg/s)'].astype(np.float64)
-            df = df.applymap(lambda x: f'{x:.2e}' if isinstance(x, (int, float)) else x)
+        df['Luminosity(erg/s)'] = df['Luminosity(erg/s)'].astype(np.float64)
+        df = df.applymap(lambda x: f'{x:.2e}' if isinstance(x, (int, float)) else x)
         
-            st.table(df)
+        st.table(df)
