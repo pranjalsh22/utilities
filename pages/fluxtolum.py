@@ -174,7 +174,7 @@ if uploaded_file is not None:
                     "Hz"
                 frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density, x1, x2)
                 L_snipped = np.trapz(luminosities_snipped,frequencies_snipped)
-                st.success(f"Net Luminosity from "+ r'$ \nu_1  =  $'+f" {x1:.2e} Hz ({spectrum_category(x1)}) to " + r"$ \nu_2  =  $"+ f"{x2:.2e} Hz ({spectrum_category(x2)})  is {L_snipped} Watts")
+                st.success(f"Net Luminosity from "+ r'$ \nu_1  =  $'+f" {x1:.2e} Hz to " + r"$ \nu_2  =  $"+ f"{x2:.2e} Hz  is {L_snipped} Watts")
                 st.success(f"Average Luminosity density "+\
                        r'$ \bar{L} =\frac{ {\int_{\nu_1}^{\nu_2}}{L_\nu} d\nu} {\nu_2-\nu_1} = $' +f" {L_snipped/(x2-x1):e} erg/s/Hz")
         
