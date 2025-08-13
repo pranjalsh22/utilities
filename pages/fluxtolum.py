@@ -51,7 +51,10 @@ if uploaded_file is not None:
             distance_cm =st.number_input("Enter the distance in cm", value=3.086e18)
         return distance_cm
 #-------------------------------------------------FIND LUMINOSIY------------------------------------------------
+    A=False
     if st.button("Calculate Luminosity"):
+        A=True
+    if A=True:
         #- - - - - - - - - - - - - - - - - - - -CHECK VALID ENTERIES- - - - - - - - - - - - - - - - 
         energy_numeric = pd.to_numeric(df[energy_col], errors='coerce')
         invalid_energy = df[energy_numeric.isna()]
