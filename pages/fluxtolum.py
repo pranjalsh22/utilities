@@ -54,7 +54,7 @@ if uploaded_file is not None:
     A=False
     if st.button("Calculate Luminosity"):
         A=True
-    if A=True:
+    if A==True:
         #- - - - - - - - - - - - - - - - - - - -CHECK VALID ENTERIES- - - - - - - - - - - - - - - - 
         energy_numeric = pd.to_numeric(df[energy_col], errors='coerce')
         invalid_energy = df[energy_numeric.isna()]
