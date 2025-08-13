@@ -117,7 +117,7 @@ if uploaded_file is not None:
 
         fig, ax = plt.subplots()
         
-        y_min = 1e49
+        y_min = 1e-30
         y_max = 1e50
         
         plt.fill_between(np.linspace(0, 9.12e-7, 5), y_min, y_max, alpha=0.3, label='radio')
