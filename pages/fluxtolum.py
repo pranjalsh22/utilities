@@ -117,8 +117,8 @@ if uploaded_file is not None:
 
         fig, ax = plt.subplots()
         
-        y_min = 1e-30
-        y_max = 1e50
+        y_min = 1e-40
+        y_max = 1e60
         
         plt.fill_between(np.linspace(0, 9.12e-7, 5), y_min, y_max, alpha=0.3, label='radio')
         plt.fill_between(np.linspace(9.12e-7, 9.12e-4, 5), y_min, y_max, alpha=0.3, label='microwave')
