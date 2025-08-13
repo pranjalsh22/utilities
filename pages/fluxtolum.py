@@ -169,7 +169,7 @@ if uploaded_file is not None:
         frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density,9.12, 9120)
         L_xray = np.trapz(luminosities_snipped,frequencies_snipped)
         
-        df=pd.DataFrame({"Range":["IR","Visible","UV","X-ray"],"Luminosity(watts)":[L_IR,L_visible,L_UV,L_xray]})
+        df=pd.DataFrame({"Range":["IR","Visible","UV","X-ray"],"Luminosity(erg/s)":[L_IR,L_visible,L_UV,L_xray]})
                 # Convert float128 to float64 in DataFrame
         df['Luminosity(erg/s)'] = df['Luminosity(erg/s)'].astype(np.float64)
         df = df.applymap(lambda x: f'{x:.2e}' if isinstance(x, (int, float)) else x)
