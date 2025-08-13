@@ -116,7 +116,6 @@ if uploaded_file is not None:
         st.dataframe(df_display)
 
         fig, ax = plt.subplots()
-        import numpy as np
         
         y_min = 1e49
         y_max = 1e50
