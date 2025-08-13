@@ -157,16 +157,16 @@ if uploaded_file is not None:
 
         st.success(f"### Total Bolometric Luminosity by np: {total_luminosity:.3e} erg/s")
         
-        frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density, 9.12e-4, 0.0912)
+        frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density,3e12,3e14)
         L_IR = np.trapz(luminosities_snipped,frequencies_snipped)
 
-        frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density, 0.0912, 0.228)
+        frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density,3e14,7.5e14)
         L_visible =np.trapz(luminosities_snipped,frequencies_snipped)
         
-        frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density,0.228, 9.12)
+        frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density,7.5e14,3e16)
         L_UV =np.trapz(luminosities_snipped,frequencies_snipped)
         
-        frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density,9.12, 9120)
+        frequencies_snipped,luminosities_snipped = snip_data(freq, lum_density,3e16,3e19)
         L_xray = np.trapz(luminosities_snipped,frequencies_snipped)
         
         df=pd.DataFrame({"Range":["IR","Visible","UV","X-ray"],"Luminosity(erg/s)":[L_IR,L_visible,L_UV,L_xray]})
