@@ -35,7 +35,7 @@ if uploaded_file is not None:
     st.dataframe(df_display)
 
 #------------------------------------------------SELECT COLUMNS------------------------------------------------
-    ohwait = st.selectbox("pick",["nuFnu","Fnu","Lnu","nuLnu"])
+    ohwait = st.selectbox("pick",["nuLnu","nuFnu","Fnu","Lnu"])
     columns = df.columns.tolist()
     energy_col = st.selectbox("Select the column for energy", columns)
     column2 = st.selectbox("Select the column for nuFnu", [c for c in columns if c != energy_col])
