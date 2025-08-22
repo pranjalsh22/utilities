@@ -1,6 +1,7 @@
 import streamlit as st
 from pages import save_continuum_file, cloudy_out_file
 
+
 st.set_page_config(page_title="My Streamlit App", layout="wide")
 
 # Define your pages with logos
