@@ -1,20 +1,20 @@
 import streamlit as st
-from pages import page1, page2, page3
+from pages import save_continuum_file, cloudy_out_file
 
-st.set_page_config(page_title="My App", layout="wide")
+st.set_page_config(page_title="My Streamlit App", layout="wide")
 
-# Custom logos for navigation
+# Define your pages with logos
 PAGES = {
     "Home": {"func": None, "logo": "🏠"},
-    "Page 1": {"func": page1.show, "logo": "📊"},
-    "Page 2": {"func": page2.show, "logo": "📈"},
-    "Page 3": {"func": page3.show, "logo": "📚"}
+    "Save Continuum File": {"func": save_continuum_file.show, "logo": "💾"},
+    "Cloudy Out File": {"func": cloudy_out_file.show, "logo": "☁️"}
 }
 
-# Display navigation buttons on homepage
+# Session state to track which page is selected
 if "page" not in st.session_state:
     st.session_state.page = "Home"
 
+# Make buttons in a row
 cols = st.columns(len(PAGES))
 for i, (name, details) in enumerate(PAGES.items()):
     if cols[i].button(f"{details['logo']} {name}"):
@@ -22,9 +22,9 @@ for i, (name, details) in enumerate(PAGES.items()):
 
 st.markdown("---")
 
-# Display selected page
+# Display content
 if st.session_state.page == "Home":
     st.title("Welcome to My Streamlit App")
-    st.write("Click the icons above to navigate.")
+    st.write("Click the icons above to navigate to different pages.")
 else:
     PAGES[st.session_state.page]["func"]()
