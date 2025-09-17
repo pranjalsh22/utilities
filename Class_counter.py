@@ -11,10 +11,41 @@ start_date = st.date_input("📅 Start Date", today)
 end_date = st.date_input("📅 End Date", today + datetime.timedelta(weeks=15))
 
 # ---------------------------
-# Get Indian holidays in range
+# Holidays (India)
 # ---------------------------
 holiday_list = holidays.India(years=range(start_date.year, end_date.year + 1))
-holidays_in_range = {d: name for d, name in holiday_list.items() if start_date <= d <= end_date}
+auto_holidays = {d: name for d, name in holiday_list.items() if start_date <= d <= end_date}
+
+# Session state to store user-managed holidays
+if "holidays" not in st.session_state:
+    st.session_state.holidays = dict(auto_holidays)
+
+st.header("🎉 Manage Holidays")
+
+# Show current holidays
+if st.session_state.holidays:
+    st.write("Holidays being considered:")
+    holiday_df = pd.DataFrame(
+        [{"Date": d, "Holiday": name} for d, name in sorted(st.session_state.holidays.items())]
+    )
+    st.table(holiday_df)
+else:
+    st.info("No holidays selected in this range.")
+
+# Add a holiday
+col1, col2 = st.columns(2)
+with col1:
+    new_holiday_date = st.date_input("➕ Add custom holiday", today, key="new_holiday")
+    new_holiday_name = st.text_input("Holiday name", value="Custom Holiday")
+    if st.button("Add Holiday"):
+        st.session_state.holidays[new_holiday_date] = new_holiday_name
+
+# Remove a holiday
+with col2:
+    if st.session_state.holidays:
+        remove_date = st.selectbox("🗑️ Remove holiday", list(st.session_state.holidays.keys()))
+        if st.button("Remove Selected Holiday"):
+            st.session_state.holidays.pop(remove_date, None)
 
 # ---------------------------
 # Default weekly subjects
@@ -33,16 +64,20 @@ schedule = {}
 all_subjects = set()
 
 for day, subjects in default_schedule.items():
-    num_subjects = st.number_input(f"Number of subjects on {day}", min_value=0, max_value=10, value=len(subjects), key=f"{day}_num")
+    num_subjects = st.number_input(
+        f"Number of subjects on {day}", min_value=0, max_value=10, value=len(subjects), key=f"{day}_num"
+    )
     schedule[day] = []
     for i in range(num_subjects):
-        subj = st.text_input(f"{day} - Subject {i+1}", value=subjects[i] if i < len(subjects) else "", key=f"{day}_{i}")
+        subj = st.text_input(
+            f"{day} - Subject {i+1}", value=subjects[i] if i < len(subjects) else "", key=f"{day}_{i}"
+        )
         if subj.strip():
             schedule[day].append(subj)
             all_subjects.add(subj)
 
 # ---------------------------
-# Display Weekly Timetable in a Table
+# Display Weekly Timetable
 # ---------------------------
 st.subheader("🗓️ Weekly Timetable")
 max_len = max(len(subs) for subs in schedule.values())
@@ -65,7 +100,7 @@ future_classes = {subj: 0 for subj in all_subjects}
 
 current_date = start_date
 while current_date <= end_date:
-    if current_date not in holidays_in_range:  # skip holidays
+    if current_date not in st.session_state.holidays:  # skip holidays
         weekday = current_date.strftime("%A")
         if weekday in schedule:
             for subj in schedule[weekday]:
