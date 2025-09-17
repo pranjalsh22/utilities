@@ -20,13 +20,29 @@ subjects = {}
 # --- Step 1: Subject setup ---
 st.header("Step 1: Define Subjects and Weekly Schedule")
 
-for i, (subj, sched) in enumerate(default_schedule.items()):
+# Allow user to change subject count
+num_subjects = st.number_input(
+    "How many subjects?", 
+    min_value=1, 
+    max_value=10, 
+    value=len(default_schedule), 
+    step=1
+)
+
+default_names = list(default_schedule.keys())
+
+for i in range(num_subjects):
+    # Use defaults if available, otherwise empty subject
+    subj = default_names[i] if i < len(default_names) else f"Subject {i+1}"
+    sched = default_schedule.get(subj, {day: 0 for day in days})
+
     st.subheader(f"Subject {i+1}")
     subject_name = st.text_input(
         f"Enter subject name {i+1}", 
         value=subj, 
         key=f"name_{i}"
     )
+
     weekly_schedule = {}
     cols = st.columns(len(days))
     for j, day in enumerate(days):
@@ -36,10 +52,12 @@ for i, (subj, sched) in enumerate(default_schedule.items()):
             value=sched.get(day, 0), 
             key=f"{subject_name}_{day}_{i}"
         )
+
     completed = st.number_input(
         f"Number of classes already completed in {subject_name}",
         min_value=0, value=0, key=f"done_{i}"
     )
+
     subjects[f"Subject_{i}_{subject_name}"] = {
         "name": subject_name,
         "weekly_schedule": weekly_schedule,
