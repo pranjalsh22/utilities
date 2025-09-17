@@ -1,0 +1,15 @@
+[theme]
+# Primary accent color (buttons, sliders, highlights)
+primaryColor = "#FB81CD"
+
+# Background (soft light to keep contrast with pink)
+backgroundColor = "#FFFFFF"
+
+# Sidebar and widget background (light grey for separation)
+secondaryBackgroundColor = "#F7F2F9"
+
+# Text color (dark gray for readability on white)
+textColor = "#2E2E2E"
+
+# Font (clean, modern look)
+font = "sans serif"
