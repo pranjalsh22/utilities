@@ -1,123 +1,65 @@
 import streamlit as st
-import pandas as pd
-from datetime import date, timedelta
+import datetime
+import holidays
 
-st.set_page_config(page_title="Class Counter", layout="centered")
-st.title("Class Counter by Pranjal")
+# ---------------------------
+# Default dates
+# ---------------------------
+today = datetime.date.today()
+start_date = st.date_input("📅 Start Date", today)
+end_date = st.date_input("📅 End Date", today + datetime.timedelta(weeks=15))
 
-# --- Default schedule ---
+# ---------------------------
+# Get Indian holidays in range
+# ---------------------------
+holiday_list = holidays.India(years=range(start_date.year, end_date.year + 1))
+holidays_in_range = {d: name for d, name in holiday_list.items() if start_date <= d <= end_date}
+
+# ---------------------------
+# Default weekly subjects
+# ---------------------------
 default_schedule = {
-    "MATH213": {"Monday": 1, "Tuesday": 1, "Wednesday": 1, "Thursday": 1, "Friday": 0},
-    "PHYS602": {"Monday": 1, "Tuesday": 0, "Wednesday": 0, "Thursday": 1, "Friday": 1},
-    "PHYS616": {"Monday": 1, "Tuesday": 0, "Wednesday": 1, "Thursday": 0, "Friday": 0},
-    "PHY605":  {"Monday": 1, "Tuesday": 1, "Wednesday": 1, "Thursday": 0, "Friday": 0},
-    "MATH121": {"Monday": 0, "Tuesday": 1, "Wednesday": 0, "Thursday": 1, "Friday": 2},
+    "Monday": ["MATH213", "PHYS602", "PHYS616", "PHYS605"],
+    "Tuesday": ["MATH213", "PHYS605", "MATH121"],
+    "Wednesday": ["PHYS616", "PHYS605", "MATH213"],
+    "Thursday": ["MATH213", "MATH121", "PHYS602"],
+    "Friday": ["MATH121", "PHYS602", "MATH121"],
 }
 
-days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-subjects = {}
+st.header("📚 Weekly Schedule (Editable)")
 
-# --- Step 1: Subject setup ---
-st.header("Step 1: Define Subjects and Weekly Schedule")
+schedule = {}
+for day, subjects in default_schedule.items():
+    st.subheader(day)
+    num_subjects = st.number_input(f"Number of subjects on {day}", min_value=0, max_value=10, value=len(subjects), key=f"{day}_num")
+    
+    schedule[day] = []
+    for i in range(num_subjects):
+        subj = st.text_input(f"{day} - Subject {i+1}", value=subjects[i] if i < len(subjects) else "", key=f"{day}_{i}")
+        if subj.strip():
+            schedule[day].append(subj)
 
-# Allow user to change subject count
-num_subjects = st.number_input(
-    "How many subjects?", 
-    min_value=1, 
-    max_value=10, 
-    value=len(default_schedule), 
-    step=1
-)
+# ---------------------------
+# Generate timetable excluding holidays
+# ---------------------------
+st.header("🗓️ Final Timetable (Excludes Holidays)")
 
-default_names = list(default_schedule.keys())
+current_date = start_date
+while current_date <= end_date:
+    weekday = current_date.strftime("%A")
+    
+    if current_date in holidays_in_range:
+        st.write(f"**{current_date} ({weekday})** - Holiday: 🎉 {holidays_in_range[current_date]}")
+    elif weekday in schedule and schedule[weekday]:
+        st.write(f"**{current_date} ({weekday})** - {', '.join(schedule[weekday])}")
+    else:
+        st.write(f"**{current_date} ({weekday})** - No classes")
+    
+    current_date += datetime.timedelta(days=1)
 
-for i in range(num_subjects):
-    # Use defaults if available, otherwise empty subject
-    subj = default_names[i] if i < len(default_names) else f"Subject {i+1}"
-    sched = default_schedule.get(subj, {day: 0 for day in days})
-
-    st.subheader(f"Subject {i+1}")
-    subject_name = st.text_input(
-        f"Enter subject name {i+1}", 
-        value=subj, 
-        key=f"name_{i}"
-    )
-
-    weekly_schedule = {}
-    cols = st.columns(len(days))
-    for j, day in enumerate(days):
-        weekly_schedule[day] = cols[j].number_input(
-            f"{day}", 
-            min_value=0, max_value=10, 
-            value=sched.get(day, 0), 
-            key=f"{subject_name}_{day}_{i}"
-        )
-
-    completed = st.number_input(
-        f"Number of classes already completed in {subject_name}",
-        min_value=0, value=0, key=f"done_{i}"
-    )
-
-    subjects[f"Subject_{i}_{subject_name}"] = {
-        "name": subject_name,
-        "weekly_schedule": weekly_schedule,
-        "completed": completed
-    }
-
-# --- Step 2: Date inputs ---
-st.header("Step 2: Set Date Range")
-
-today = date.today()
-start_date = st.date_input("Start date", value=today)
-end_date = st.date_input("End date", value=today + timedelta(weeks=15))
-
-# --- Step 3: Days off ---
-st.header("Step 3: Add Days Off (Holidays, Breaks)")
-
-if "off_days" not in st.session_state:
-    st.session_state.off_days = set()
-
-new_off_day = st.date_input("📅 Pick a day off", value=today)
-col1, col2 = st.columns(2)
-if col1.button("➕ Add this day off"):
-    st.session_state.off_days.add(new_off_day)
-if col2.button("🗑️ Clear all days off"):
-    st.session_state.off_days.clear()
-
-if st.session_state.off_days:
-    sorted_days = sorted(st.session_state.off_days)
-    st.markdown("### 📌 Selected Days Off:")
-    st.write(sorted_days)
-else:
-    st.info("No off days selected yet.")
-
-# --- Step 4: Results ---
-st.header("Result: Projected Class Counts by End Date")
-
-if st.button("Calculate"):
-    total_future_classes = {key: 0 for key in subjects}
-
-    current_date = start_date
-    while current_date <= end_date:
-        if current_date in st.session_state.off_days:
-            current_date += timedelta(days=1)
-            continue
-        weekday = current_date.strftime("%A")
-        for key, info in subjects.items():
-            total_future_classes[key] += info["weekly_schedule"].get(weekday, 0)
-        current_date += timedelta(days=1)
-
-    results = []
-    for key, info in subjects.items():
-        completed = info["completed"]
-        expected = total_future_classes[key]
-        total_by_end = completed + expected
-        results.append({
-            "Subject": info["name"],
-            "Classes Already Completed": completed,
-            "Classes Expected (From Today)": expected,
-            "Total Classes by End Date": total_by_end
-        })
-
-    df = pd.DataFrame(results)
-    st.dataframe(df, use_container_width=True)
+# ---------------------------
+# Show list of holidays separately
+# ---------------------------
+st.header("🎊 Holidays in Selected Range")
+for d, name in holidays_in_range.items():
+    st.write(f"{d} - {name}")
