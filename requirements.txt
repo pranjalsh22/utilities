@@ -6,3 +6,4 @@ plotly
 pydrive
 scipy
 openai
+holidays
