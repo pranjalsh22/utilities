@@ -1,11 +1,14 @@
 import streamlit as st
 import pandas as pd
 from datetime import date, timedelta
+from openai import OpenAI
 
 st.set_page_config(page_title="Class Counter", layout="centered")
 
 st.title(" Class Counter by Pranjal")
 
+# Initialize OpenAI client
+client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
 # Step 1: Subject setup
 st.header("Step 1: Define Subjects and Weekly Schedule")
@@ -42,11 +45,12 @@ start_date = st.date_input("Start date", value=date.today())
 end_date = st.date_input("End date", value=date.today() + timedelta(weeks=15))
 
 # Step 3: Days off (calendar-based)
-st.header("Step 3: Add Days Off (Holidays, Breaks). Select the date and clic on add")
+st.header("Step 3: Add Days Off (Holidays, Breaks)")
 
 if "off_days" not in st.session_state:
     st.session_state.off_days = set()
 
+# --- Manual add ---
 new_off_day = st.date_input("📅 Pick a day off", value=date.today())
 
 col1, col2 = st.columns(2)
@@ -55,6 +59,35 @@ if col1.button("➕ Add this day off"):
 if col2.button("🗑️ Clear all days off"):
     st.session_state.off_days.clear()
 
+# --- GPT Suggestion ---
+st.markdown("#### ✨ Auto-suggest holidays with AI")
+if st.button("Suggest Holidays with ChatGPT"):
+    prompt = f"""
+    List all major public holidays in India (national + widely observed festivals)
+    between {start_date} and {end_date}. 
+    Return them in JSON format as a list of dates (YYYY-MM-DD) with holiday names.
+    """
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    suggestion = response.choices[0].message.content
+
+    st.subheader("Suggested Holidays")
+    st.code(suggestion, language="json")
+
+    # If you want, you can parse the JSON into actual dates
+    import json
+    try:
+        holidays = json.loads(suggestion)
+        for h in holidays:
+            holiday_date = date.fromisoformat(h["date"])
+            st.session_state.off_days.add(holiday_date)
+        st.success("✅ Added suggested holidays to off days!")
+    except Exception:
+        st.error("Could not parse GPT response. Please check formatting.")
+
+# Display selected off days
 if st.session_state.off_days:
     sorted_days = sorted(st.session_state.off_days)
     st.markdown("### 📌 Selected Days Off:")
@@ -62,7 +95,7 @@ if st.session_state.off_days:
 else:
     st.info("No off days selected yet.")
 
-
+# Step 4: Results
 st.header(" Result: Projected Class Counts by End Date")
 
 if st.button("Calculate"):
