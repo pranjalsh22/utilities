@@ -1,6 +1,7 @@
 import streamlit as st
 import datetime
 import holidays
+import pandas as pd
 
 # ---------------------------
 # Default dates
@@ -29,37 +30,64 @@ default_schedule = {
 st.header("📚 Weekly Schedule (Editable)")
 
 schedule = {}
+all_subjects = set()
+
 for day, subjects in default_schedule.items():
-    st.subheader(day)
     num_subjects = st.number_input(f"Number of subjects on {day}", min_value=0, max_value=10, value=len(subjects), key=f"{day}_num")
-    
     schedule[day] = []
     for i in range(num_subjects):
         subj = st.text_input(f"{day} - Subject {i+1}", value=subjects[i] if i < len(subjects) else "", key=f"{day}_{i}")
         if subj.strip():
             schedule[day].append(subj)
+            all_subjects.add(subj)
 
 # ---------------------------
-# Generate timetable excluding holidays
+# Display Weekly Timetable in a Table
 # ---------------------------
-st.header("🗓️ Final Timetable (Excludes Holidays)")
+st.subheader("🗓️ Weekly Timetable")
+max_len = max(len(subs) for subs in schedule.values())
+table_data = {day: (subs + [""] * (max_len - len(subs))) for day, subs in schedule.items()}
+weekly_df = pd.DataFrame(table_data)
+st.table(weekly_df)
+
+# ---------------------------
+# Input: Already completed classes
+# ---------------------------
+st.subheader("✅ Enter Classes Already Completed")
+completed_classes = {}
+for subj in sorted(all_subjects):
+    completed_classes[subj] = st.number_input(f"{subj}", min_value=0, value=0, key=f"completed_{subj}")
+
+# ---------------------------
+# Count future classes (excluding holidays)
+# ---------------------------
+future_classes = {subj: 0 for subj in all_subjects}
 
 current_date = start_date
 while current_date <= end_date:
-    weekday = current_date.strftime("%A")
-    
-    if current_date in holidays_in_range:
-        st.write(f"**{current_date} ({weekday})** - Holiday: 🎉 {holidays_in_range[current_date]}")
-    elif weekday in schedule and schedule[weekday]:
-        st.write(f"**{current_date} ({weekday})** - {', '.join(schedule[weekday])}")
-    else:
-        st.write(f"**{current_date} ({weekday})** - No classes")
-    
+    if current_date not in holidays_in_range:  # skip holidays
+        weekday = current_date.strftime("%A")
+        if weekday in schedule:
+            for subj in schedule[weekday]:
+                future_classes[subj] += 1
     current_date += datetime.timedelta(days=1)
 
 # ---------------------------
-# Show list of holidays separately
+# Final Summary Table
 # ---------------------------
-st.header("🎊 Holidays in Selected Range")
-for d, name in holidays_in_range.items():
-    st.write(f"{d} - {name}")
+st.subheader("📊 Class Summary")
+
+results = []
+for subj in sorted(all_subjects):
+    completed = completed_classes.get(subj, 0)
+    expected = future_classes.get(subj, 0)
+    total = completed + expected
+    results.append({
+        "Subject": subj,
+        "Already Completed": completed,
+        "Expected in Date Range": expected,
+        "Net Classes (Total)": total
+    })
+
+summary_df = pd.DataFrame(results)
+st.table(summary_df)
