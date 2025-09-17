@@ -5,10 +5,7 @@ from datetime import date, timedelta
 st.set_page_config(page_title="Class Counter", layout="centered")
 st.title("Class Counter by Pranjal")
 
-# --- Step 1: Subject setup ---
-st.header("Step 1: Weekly Schedule")
-
-# Default subjects and their weekly schedules
+# --- Default schedule ---
 default_schedule = {
     "MATH213": {"Monday": 1, "Tuesday": 1, "Wednesday": 1, "Thursday": 1, "Friday": 0},
     "PHYS602": {"Monday": 1, "Tuesday": 0, "Wednesday": 0, "Thursday": 1, "Friday": 1},
@@ -20,21 +17,31 @@ default_schedule = {
 days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 subjects = {}
 
+# --- Step 1: Subject setup ---
+st.header("Step 1: Define Subjects and Weekly Schedule")
+
 for i, (subj, sched) in enumerate(default_schedule.items()):
-    st.subheader(f"{subj}")
+    st.subheader(f"Subject {i+1}")
+    subject_name = st.text_input(
+        f"Enter subject name {i+1}", 
+        value=subj, 
+        key=f"name_{i}"
+    )
     weekly_schedule = {}
     cols = st.columns(len(days))
     for j, day in enumerate(days):
         weekly_schedule[day] = cols[j].number_input(
-            f"{day}", min_value=0, max_value=10, 
-            value=sched.get(day, 0), key=f"{subj}_{day}"
+            f"{day}", 
+            min_value=0, max_value=10, 
+            value=sched.get(day, 0), 
+            key=f"{subject_name}_{day}_{i}"
         )
     completed = st.number_input(
-        f"Number of classes already completed in {subj}",
-        min_value=0, value=0, key=f"done_{subj}"
+        f"Number of classes already completed in {subject_name}",
+        min_value=0, value=0, key=f"done_{i}"
     )
-    subjects[subj] = {
-        "name": subj,
+    subjects[f"Subject_{i}_{subject_name}"] = {
+        "name": subject_name,
         "weekly_schedule": weekly_schedule,
         "completed": completed
     }
