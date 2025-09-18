@@ -6,7 +6,7 @@ import pandas as pd
 # ---------------------------
 # Default dates
 # ---------------------------
-st.title("class counter")
+st.title("Class Counter")
 st.write("by pranjal")
 today = datetime.date.today()
 start_date = st.date_input("Start Date", today)
