@@ -112,7 +112,7 @@ while current_date <= end_date:
 # ---------------------------
 # Final Summary Table
 # ---------------------------
-st.subheader(Class Summary")
+st.subheader("Class Summary")
 
 results = []
 for subj in sorted(all_subjects):
