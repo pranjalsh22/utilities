@@ -9,8 +9,8 @@ import pandas as pd
 st.title("class counter")
 st.write("by pranjal")
 today = datetime.date.today()
-start_date = st.date_input("📅 Start Date", today)
-end_date = st.date_input("📅 End Date", today + datetime.timedelta(weeks=15))
+start_date = st.date_input("Start Date", today)
+end_date = st.date_input(" End Date", today + datetime.timedelta(weeks=15))
 
 # ---------------------------
 # Holidays (India)
@@ -45,7 +45,7 @@ with col1:
 # Remove a holiday
 with col2:
     if st.session_state.holidays:
-        remove_date = st.selectbox("🗑️ Remove holiday", list(st.session_state.holidays.keys()))
+        remove_date = st.selectbox("Remove holiday", list(st.session_state.holidays.keys()))
         if st.button("Remove Selected Holiday"):
             st.session_state.holidays.pop(remove_date, None)
 
@@ -81,7 +81,7 @@ for day, subjects in default_schedule.items():
 # ---------------------------
 # Display Weekly Timetable
 # ---------------------------
-st.subheader("🗓️ Weekly Timetable")
+st.subheader("Weekly Timetable")
 max_len = max(len(subs) for subs in schedule.values())
 table_data = {day: (subs + [""] * (max_len - len(subs))) for day, subs in schedule.items()}
 weekly_df = pd.DataFrame(table_data)
