@@ -22,7 +22,7 @@ auto_holidays = {d: name for d, name in holiday_list.items() if start_date <= d 
 if "holidays" not in st.session_state:
     st.session_state.holidays = dict(auto_holidays)
 
-st.header("🎉 Manage Holidays")
+st.header(" Manage Holidays")
 
 # Show current holidays
 if st.session_state.holidays:
@@ -60,7 +60,7 @@ default_schedule = {
     "Friday": ["MATH121", "PHYS602", "MATH121"],
 }
 
-st.header("📚 Weekly Schedule (Editable)")
+st.header("Weekly Schedule (Editable)")
 
 schedule = {}
 all_subjects = set()
@@ -90,7 +90,7 @@ st.table(weekly_df)
 # ---------------------------
 # Input: Already completed classes
 # ---------------------------
-st.subheader("✅ Enter Classes Already Completed")
+st.subheader("Enter Classes Already Completed")
 completed_classes = {}
 for subj in sorted(all_subjects):
     completed_classes[subj] = st.number_input(f"{subj}", min_value=0, value=0, key=f"completed_{subj}")
@@ -112,7 +112,7 @@ while current_date <= end_date:
 # ---------------------------
 # Final Summary Table
 # ---------------------------
-st.subheader("📊 Class Summary")
+st.subheader(Class Summary")
 
 results = []
 for subj in sorted(all_subjects):
