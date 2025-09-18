@@ -6,6 +6,8 @@ import pandas as pd
 # ---------------------------
 # Default dates
 # ---------------------------
+st.title("class counter")
+st.write("by pranjal")
 today = datetime.date.today()
 start_date = st.date_input("📅 Start Date", today)
 end_date = st.date_input("📅 End Date", today + datetime.timedelta(weeks=15))
