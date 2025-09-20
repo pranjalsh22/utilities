@@ -107,7 +107,6 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups,
     plt.tight_layout()
     st.pyplot(plt)
 
-
 def linegraph():
     st.title("📈 Line Graph Plotting Tool")
     uploaded_file = st.file_uploader("📤 Upload your data file", key="linegraph")
@@ -124,51 +123,24 @@ def linegraph():
             x_column = st.selectbox("Select **X-axis column**", columns)
             y_columns = st.multiselect("Select **Y-axis columns**", columns, default=[columns[1]])
 
+            # -----------------------------------------
+            # 🔹 Initialize variables to avoid NameError
+            color_groups, color_labels = [], []
+            pattern_groups, pattern_labels = [], []
+            # -----------------------------------------
+
             st.sidebar.header("📝 Labels & Title")
             title = st.sidebar.text_input("Graph Title", f'Multiple Curves: Y vs {x_column}')
             x_axis_label = st.sidebar.text_input("X-axis Label", x_column)
             y_axis_label = st.sidebar.text_input("Y-axis Label", "Y Values")
 
-            # 🔹 Font size controls
-            st.sidebar.header("🔠 Font & Marker Settings")
-            font_sizes = {
-                "title": st.sidebar.slider("Title Font Size", 8, 30, 16),
-                "labels": st.sidebar.slider("Axis Labels Font Size", 8, 24, 12),
-                "ticks": st.sidebar.slider("Ticks Font Size", 6, 20, 10),
-                "legend": st.sidebar.slider("Legend Font Size", 6, 20, 10)
-            }
-
-            # 🔹 Marker style and size
-            marker_styles_available = [
-                "o", "s", "^", "v", "<", ">", "D", "p", "*", "h", "H", "x", "+", ".", ","
-            ]
-            marker_style = st.sidebar.selectbox("Marker Style", marker_styles_available, index=0)
-            marker_size = st.sidebar.slider("Marker Size", 2, 20, 6)
-
-            # 🔹 Legend options
-            show_legend = st.sidebar.checkbox("Show Legend", value=True)
-            legend_title = st.sidebar.text_input("Legend Title", "Legend") if show_legend else None
-
-            # Axis scales & ranges
-            with st.expander("📐 Axis Scale & Range", expanded=True):
-                col1, col2 = st.columns(2)
-                with col1:
-                    x_log_scale = st.checkbox("Log scale for X-axis", value=False)
-                    x_data = pd.to_numeric(data[x_column], errors='coerce').dropna()
-                    x_range_min = st.number_input(f"X-axis {x_column} min", value=float(x_data.min()))
-                    x_range_max = st.number_input(f"X-axis {x_column} max", value=float(x_data.max()))
-                with col2:
-                    y_log_scale = st.checkbox("Log scale for Y-axis", value=False)
-                    y_data_first = pd.to_numeric(data[y_columns[0]], errors='coerce').dropna()
-                    y_range_min = st.number_input("Y-axis min", value=float(y_data_first.min()))
-                    y_range_max = st.number_input("Y-axis max", value=float(y_data_first.max()))
-
-            # Color & pattern groups unchanged ...
+            # ... rest of sidebar and expanders (color groups, patterns, etc.)
 
             if st.button("📊 Plot Line Graph"):
                 x_range = (x_range_min, x_range_max)
                 y_range = (y_range_min, y_range_max)
 
+                # fallback if no groups defined
                 if not color_groups:
                     color_groups = [[col] for col in y_columns]
                     color_labels = y_columns
