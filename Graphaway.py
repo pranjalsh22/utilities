@@ -22,20 +22,16 @@ def read_file(uploaded_file):
         st.error(f"Unsupported file format. Please upload a valid CSV file.\nError: {e}")
         return None
 
-def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, 
-               color_labels, pattern_labels, x_log_scale, y_log_scale, x_range, y_range, 
-               title, x_label, y_label):
+def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_groups,
+               color_labels, pattern_labels, bullet_labels,
+               x_log_scale, y_log_scale, x_range, y_range, 
+               title, x_label, y_label, font_sizes, marker_size):
 
     plt.figure(figsize=(10, 6))
+    pattern_styles = {'solid': '-', 'dotted': ':', 'dashed': '--', 'dashdot': '-.'}
+    marker_styles_available = ['o', 's', '^', 'D', '*', '+', 'x']
 
-    pattern_styles = {
-        'solid': '-',
-        'dotted': ':',
-        'dashed': '--',
-        'dashdot': '-.'
-    }
-
-    # Assign colors
+    # ------------------ Colors ------------------
     color_idx = 0
     column_colors, column_labels = {}, {}
     for idx, group in enumerate(color_groups):
@@ -46,17 +42,28 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups,
             column_colors[col] = color
             column_labels[col] = label
 
-    # Assign patterns
+    # ------------------ Patterns ------------------
     column_linestyles, column_pattern_labels = {}, {}
     for idx, group in enumerate(pattern_groups):
-        label = f"Pattern {idx+1}"
         style = '-'
+        label = f"Pattern {idx+1}"
         if pattern_labels and idx < len(pattern_labels):
             label, style_key = pattern_labels[idx]
             style = pattern_styles.get(style_key, '-')
         for col in group:
             column_linestyles[col] = style
             column_pattern_labels[col] = label
+
+    # ------------------ Markers ------------------
+    column_markers, column_marker_labels = {}, {}
+    for idx, group in enumerate(bullet_groups):
+        marker = 'o'
+        label = f"Bullet {idx+1}"
+        if bullet_labels and idx < len(bullet_labels):
+            label, marker = bullet_labels[idx]
+        for col in group:
+            column_markers[col] = marker
+            column_marker_labels[col] = label
 
     used_labels = set()
 
@@ -65,15 +72,16 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups,
         if col not in column_colors:
             color_idx += 1
         linestyle = column_linestyles.get(col, '-')
-        label = column_labels.get(col) or column_pattern_labels.get(col) or col
+        marker = column_markers.get(col, 'o')
+        label = column_labels.get(col) or column_pattern_labels.get(col) or column_marker_labels.get(col) or col
 
         if label not in used_labels:
-            plt.plot(data[x_column], data[col], marker='o', linestyle=linestyle, color=color, label=label)
+            plt.plot(data[x_column], data[col], marker=marker, markersize=marker_size,
+                     linestyle=linestyle, color=color, label=label)
             used_labels.add(label)
         else:
-            plt.plot(data[x_column], data[col], marker='o', linestyle=linestyle, color=color)
-
-    plt.grid(True)
+            plt.plot(data[x_column], data[col], marker=marker, markersize=marker_size,
+                     linestyle=linestyle, color=color)
 
     if x_log_scale:
         plt.xscale('log')
@@ -84,12 +92,16 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups,
     if y_range:
         plt.ylim(y_range)
 
-    plt.title(title)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.legend(title="Legend")
+    plt.title(title, fontsize=font_sizes.get("title", 16))
+    plt.xlabel(x_label, fontsize=font_sizes.get("labels", 14))
+    plt.ylabel(y_label, fontsize=font_sizes.get("labels", 14))
+    plt.xticks(fontsize=font_sizes.get("ticks", 12))
+    plt.yticks(fontsize=font_sizes.get("ticks", 12))
+    plt.grid(True)
+    plt.legend(title="Legend", fontsize=font_sizes.get("legend", 12))
     plt.tight_layout()
     st.pyplot(plt)
+
 
 def integrate_curve(x_data, y_data, log_x=False, log_y=False, method='trapezoid'):
     if log_x:
@@ -143,6 +155,29 @@ def linegraph():
         x_axis_label = st.sidebar.text_input("X-axis Label", x_column)
         y_axis_label = st.sidebar.text_input("Y-axis Label", "Y Values")
 
+        # ------------------ Sidebar customization ------------------
+        st.sidebar.header("🖊️ Graph Styling")
+        marker_size = st.sidebar.number_input("Marker size", min_value=1, max_value=20, value=6)
+        font_sizes = {
+            "title": st.sidebar.number_input("Title font size", value=16),
+            "labels": st.sidebar.number_input("Axis labels font size", value=14),
+            "ticks": st.sidebar.number_input("Ticks font size", value=12),
+            "legend": st.sidebar.number_input("Legend font size", value=12)
+        }
+        
+        # ------------------ Bullet groups ------------------
+        with st.expander("🔹 Bullet (Marker) Groups"):
+            marker_styles_available = ['o', 's', '^', 'D', '*', '+', 'x']
+            bullet_groups, bullet_labels = [], []
+            num_bullet_groups = st.number_input("Number of bullet groups", min_value=0, max_value=10, value=0)
+            for i in range(num_bullet_groups):
+                cols = st.multiselect(f"Bullet Group {i+1} Columns", columns, key=f"bullet_group_{i}")
+                label = st.text_input(f"Label for Bullet Group {i+1}", key=f"bullet_label_{i}", value=f"Bullet {i+1}")
+                marker = st.selectbox(f"Marker style for Group {i+1}", marker_styles_available, key=f"bullet_marker_{i}")
+                if cols:
+                    bullet_groups.append(cols)
+                    bullet_labels.append((label, marker))
+
         # ------------------ Axis Range Inputs ------------------
         with st.expander("📐 Axis Scale & Range", expanded=True):
             col1, col2 = st.columns(2)
@@ -189,14 +224,17 @@ def linegraph():
             if not color_groups:
                 color_groups = [[col] for col in y_columns]
                 color_labels = y_columns
+        
             plot_graph(
                 data, x_column, y_columns,
-                color_groups, pattern_groups,
-                color_labels, pattern_labels,
+                color_groups, pattern_groups, bullet_groups,
+                color_labels, pattern_labels, bullet_labels,
                 x_log_scale, y_log_scale,
                 x_range, y_range,
-                title, x_axis_label, y_axis_label
+                title, x_axis_label, y_axis_label,
+                font_sizes, marker_size
             )
+
 
         # ------------------ Integration ------------------
         with st.expander("🧮 Integration (Area under Curve)"):
