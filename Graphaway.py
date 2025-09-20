@@ -166,6 +166,7 @@ def linegraph():
             "legend": st.sidebar.number_input("Legend font size", value=12)
         }
         # In the sidebar / settings section
+        global show_legend
         show_legend = st.sidebar.checkbox("Show Legend", value=True)
 
         # ------------------ Bullet groups ------------------
