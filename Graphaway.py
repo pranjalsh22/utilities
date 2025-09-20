@@ -124,9 +124,12 @@ def linegraph():
             y_columns = st.multiselect("Select **Y-axis columns**", columns, default=[columns[1]])
 
             # -----------------------------------------
-            # 🔹 Initialize variables to avoid NameError
+            # 🔹 Initialize variables (avoid NameError)
             color_groups, color_labels = [], []
             pattern_groups, pattern_labels = [], []
+            x_range_min, x_range_max = None, None
+            y_range_min, y_range_max = None, None
+            x_log_scale, y_log_scale = False, False
             # -----------------------------------------
 
             st.sidebar.header("📝 Labels & Title")
@@ -134,13 +137,44 @@ def linegraph():
             x_axis_label = st.sidebar.text_input("X-axis Label", x_column)
             y_axis_label = st.sidebar.text_input("Y-axis Label", "Y Values")
 
-            # ... rest of sidebar and expanders (color groups, patterns, etc.)
+            # (Font sizes, marker settings, legend options here...)
+
+            # Axis scales & ranges
+            with st.expander("📐 Axis Scale & Range", expanded=True):
+                col1, col2 = st.columns(2)
+                with col1:
+                    x_log_scale = st.checkbox("Log scale for X-axis", value=False)
+                    x_data = pd.to_numeric(data[x_column], errors='coerce').dropna()
+                    x_range_min = st.number_input(
+                        f"X-axis {x_column} min", value=float(x_data.min())
+                    )
+                    x_range_max = st.number_input(
+                        f"X-axis {x_column} max", value=float(x_data.max())
+                    )
+                with col2:
+                    y_log_scale = st.checkbox("Log scale for Y-axis", value=False)
+                    y_data_first = pd.to_numeric(data[y_columns[0]], errors='coerce').dropna()
+                    y_range_min = st.number_input(
+                        "Y-axis min", value=float(y_data_first.min())
+                    )
+                    y_range_max = st.number_input(
+                        "Y-axis max", value=float(y_data_first.max())
+                    )
+
+            # (Color and pattern groups...)
 
             if st.button("📊 Plot Line Graph"):
-                x_range = (x_range_min, x_range_max)
-                y_range = (y_range_min, y_range_max)
+                # ✅ Fallback in case user didn’t adjust range
+                if x_range_min is None or x_range_max is None:
+                    x_range = None
+                else:
+                    x_range = (x_range_min, x_range_max)
 
-                # fallback if no groups defined
+                if y_range_min is None or y_range_max is None:
+                    y_range = None
+                else:
+                    y_range = (y_range_min, y_range_max)
+
                 if not color_groups:
                     color_groups = [[col] for col in y_columns]
                     color_labels = y_columns
