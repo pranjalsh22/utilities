@@ -19,6 +19,7 @@ def read_file(uploaded_file):
     except Exception as e:
         st.error(f"Unsupported file format. Please upload a valid CSV file with tabular data.\nError: {e}")
         return None
+
 def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, 
                color_labels, pattern_labels, x_log_scale, y_log_scale, x_range, y_range, 
                title, x_label, y_label,
@@ -137,7 +138,18 @@ def linegraph():
             x_axis_label = st.sidebar.text_input("X-axis Label", x_column)
             y_axis_label = st.sidebar.text_input("Y-axis Label", "Y Values")
 
-            # (Font sizes, marker settings, legend options here...)
+            # 🎨 Style & Appearance
+            with st.sidebar.expander("🎨 Style & Appearance", expanded=True):
+                font_sizes = {
+                    "title": st.number_input("Title font size", value=16),
+                    "labels": st.number_input("Axis labels font size", value=14),
+                    "ticks": st.number_input("Tick labels font size", value=12),
+                    "legend": st.number_input("Legend font size", value=12)
+                }
+                marker_style = st.selectbox("Marker style", ["o", "s", "D", "^", "v", "x", "+", None])
+                marker_size = st.number_input("Marker size", value=6)
+                show_legend = st.checkbox("Show legend?", value=True)
+                legend_title = st.text_input("Legend title", "Legend")
 
             # Axis scales & ranges
             with st.expander("📐 Axis Scale & Range", expanded=True):
@@ -160,8 +172,6 @@ def linegraph():
                     y_range_max = st.number_input(
                         "Y-axis max", value=float(y_data_first.max())
                     )
-
-            # (Color and pattern groups...)
 
             if st.button("📊 Plot Line Graph"):
                 # ✅ Fallback in case user didn’t adjust range
@@ -236,7 +246,6 @@ def plot_pie_chart():
             ax.set_title(f"Pie Chart of {column}")
             st.pyplot(fig)
 
-
 def plot_bar_chart():
     st.title("📊 Bar Chart Visualization")
     uploaded_file = st.file_uploader("Upload your data file", key="barchart")
@@ -267,7 +276,6 @@ def plot_bar_chart():
             plt.tight_layout()
             st.pyplot(fig)
 
-
 def main():
     st.sidebar.title("Visualization Tools")
     option = st.sidebar.selectbox("Choose a tool", 
@@ -279,7 +287,6 @@ def main():
         plot_pie_chart()
     elif option == "Bar Chart":
         plot_bar_chart()
-
 
 if __name__ == "__main__":
     main()
