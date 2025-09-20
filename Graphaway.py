@@ -98,7 +98,6 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_g
     plt.xticks(fontsize=font_sizes.get("ticks", 12))
     plt.yticks(fontsize=font_sizes.get("ticks", 12))
     plt.grid(True)
-    show_legend=st.sidebar.checkbox("show legend",value=True)
     if show_legend:
         plt.legend(title="Legend", fontsize=font_sizes.get("legend", 12))    
     plt.tight_layout()
@@ -166,7 +165,9 @@ def linegraph():
             "ticks": st.sidebar.number_input("Ticks font size", value=12),
             "legend": st.sidebar.number_input("Legend font size", value=12)
         }
-        
+        # In the sidebar / settings section
+        show_legend = st.sidebar.checkbox("Show Legend", value=True)
+
         # ------------------ Bullet groups ------------------
         with st.expander("🔹 Bullet (Marker) Groups"):
             marker_styles_available = ['o', 's', '^', 'D', '*', '+', 'x']
