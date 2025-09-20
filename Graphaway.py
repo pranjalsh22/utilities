@@ -19,10 +19,10 @@ def read_file(uploaded_file):
     except Exception as e:
         st.error(f"Unsupported file format. Please upload a valid CSV file with tabular data.\nError: {e}")
         return None
-
 def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, 
                color_labels, pattern_labels, x_log_scale, y_log_scale, x_range, y_range, 
-               title, x_label, y_label):
+               title, x_label, y_label,
+               font_sizes, marker_style, marker_size, show_legend, legend_title):
 
     plt.figure(figsize=(10, 6))
 
@@ -33,10 +33,9 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups,
         'dashdot': '-.'
     }
 
-    # Assign a color to each column (from color_groups or auto)
+    # Assign colors
     color_idx = 0
-    column_colors = {}
-    column_labels = {}
+    column_colors, column_labels = {}, {}
     for idx, group in enumerate(color_groups):
         color = plt.cm.tab10(color_idx % 10)
         color_idx += 1
@@ -45,9 +44,8 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups,
             column_colors[col] = color
             column_labels[col] = label
 
-    # Assign a pattern (linestyle) to each column from pattern_groups
-    column_linestyles = {}
-    column_pattern_labels = {}
+    # Assign patterns
+    column_linestyles, column_pattern_labels = {}, {}
     for idx, group in enumerate(pattern_groups):
         label = f"Pattern {idx+1}"
         style = '-'
@@ -60,25 +58,36 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups,
 
     used_labels = set()
 
-    # Plot each Y-column once with its color and (optional) linestyle
+    # Plot each Y-column
     for col in y_columns:
         color = column_colors.get(col, plt.cm.tab10(color_idx % 10))
         if col not in column_colors:
             color_idx += 1
-        linestyle = column_linestyles.get(col, '-')  # Default to solid
-
-        # Use label from color group or pattern group if available
+        linestyle = column_linestyles.get(col, '-')
         label = column_labels.get(col) or column_pattern_labels.get(col) or col
 
         if label not in used_labels:
-            plt.plot(data[x_column], data[col], marker='o', linestyle=linestyle, color=color, label=label)
+            plt.plot(
+                data[x_column], data[col],
+                marker=marker_style, markersize=marker_size,
+                linestyle=linestyle, color=color, label=label
+            )
             used_labels.add(label)
         else:
-            plt.plot(data[x_column], data[col], marker='o', linestyle=linestyle, color=color)
+            plt.plot(
+                data[x_column], data[col],
+                marker=marker_style, markersize=marker_size,
+                linestyle=linestyle, color=color
+            )
 
-    handles, labels = plt.gca().get_legend_handles_labels()
-    by_label = dict(zip(labels, handles))
-    plt.legend(by_label.values(), by_label.keys(), title="Legend")
+    # Legend control
+    if show_legend:
+        handles, labels = plt.gca().get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        plt.legend(
+            by_label.values(), by_label.keys(),
+            title=legend_title, fontsize=font_sizes["legend"], title_fontsize=font_sizes["legend"]
+        )
 
     if x_log_scale:
         plt.xscale('log')
@@ -89,12 +98,91 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups,
     if y_range:
         plt.ylim(y_range)
 
-    plt.title(title)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
+    # Font sizes
+    plt.title(title, fontsize=font_sizes["title"])
+    plt.xlabel(x_label, fontsize=font_sizes["labels"])
+    plt.ylabel(y_label, fontsize=font_sizes["labels"])
+    plt.tick_params(axis='both', labelsize=font_sizes["ticks"])
     plt.grid(True)
     plt.tight_layout()
     st.pyplot(plt)
+
+
+def linegraph():
+    st.title("📈 Line Graph Plotting Tool")
+    uploaded_file = st.file_uploader("📤 Upload your data file", key="linegraph")
+
+    if uploaded_file is not None:
+        data = read_file(uploaded_file)
+
+        if data is not None:
+            st.subheader("🔍 Data Preview")
+            st.dataframe(data)
+            columns = data.columns.tolist()
+
+            st.markdown("### ✏️ Axis Configuration")
+            x_column = st.selectbox("Select **X-axis column**", columns)
+            y_columns = st.multiselect("Select **Y-axis columns**", columns, default=[columns[1]])
+
+            st.sidebar.header("📝 Labels & Title")
+            title = st.sidebar.text_input("Graph Title", f'Multiple Curves: Y vs {x_column}')
+            x_axis_label = st.sidebar.text_input("X-axis Label", x_column)
+            y_axis_label = st.sidebar.text_input("Y-axis Label", "Y Values")
+
+            # 🔹 Font size controls
+            st.sidebar.header("🔠 Font & Marker Settings")
+            font_sizes = {
+                "title": st.sidebar.slider("Title Font Size", 8, 30, 16),
+                "labels": st.sidebar.slider("Axis Labels Font Size", 8, 24, 12),
+                "ticks": st.sidebar.slider("Ticks Font Size", 6, 20, 10),
+                "legend": st.sidebar.slider("Legend Font Size", 6, 20, 10)
+            }
+
+            # 🔹 Marker style and size
+            marker_styles_available = [
+                "o", "s", "^", "v", "<", ">", "D", "p", "*", "h", "H", "x", "+", ".", ","
+            ]
+            marker_style = st.sidebar.selectbox("Marker Style", marker_styles_available, index=0)
+            marker_size = st.sidebar.slider("Marker Size", 2, 20, 6)
+
+            # 🔹 Legend options
+            show_legend = st.sidebar.checkbox("Show Legend", value=True)
+            legend_title = st.sidebar.text_input("Legend Title", "Legend") if show_legend else None
+
+            # Axis scales & ranges
+            with st.expander("📐 Axis Scale & Range", expanded=True):
+                col1, col2 = st.columns(2)
+                with col1:
+                    x_log_scale = st.checkbox("Log scale for X-axis", value=False)
+                    x_data = pd.to_numeric(data[x_column], errors='coerce').dropna()
+                    x_range_min = st.number_input(f"X-axis {x_column} min", value=float(x_data.min()))
+                    x_range_max = st.number_input(f"X-axis {x_column} max", value=float(x_data.max()))
+                with col2:
+                    y_log_scale = st.checkbox("Log scale for Y-axis", value=False)
+                    y_data_first = pd.to_numeric(data[y_columns[0]], errors='coerce').dropna()
+                    y_range_min = st.number_input("Y-axis min", value=float(y_data_first.min()))
+                    y_range_max = st.number_input("Y-axis max", value=float(y_data_first.max()))
+
+            # Color & pattern groups unchanged ...
+
+            if st.button("📊 Plot Line Graph"):
+                x_range = (x_range_min, x_range_max)
+                y_range = (y_range_min, y_range_max)
+
+                if not color_groups:
+                    color_groups = [[col] for col in y_columns]
+                    color_labels = y_columns
+
+                plot_graph(
+                    data, x_column, y_columns,
+                    color_groups, pattern_groups,
+                    color_labels, pattern_labels,
+                    x_log_scale, y_log_scale,
+                    x_range, y_range,
+                    title, x_axis_label, y_axis_label,
+                    font_sizes, marker_style, marker_size,
+                    show_legend, legend_title
+                )
 
 def integrate_curve(x_data, y_data, log_x=False, log_y=False, method='trapezoid'):
     if log_x:
@@ -124,7 +212,7 @@ def integrate_curve(x_data, y_data, log_x=False, log_y=False, method='trapezoid'
         return (3 * h / 8) * result
     else:
         return "❌ Unknown method selected."
-
+'''
 def linegraph():
     st.title("📈 Line Graph Plotting Tool")
     uploaded_file = st.file_uploader("📤 Upload your data file", key="linegraph")
@@ -238,7 +326,7 @@ def linegraph():
                                 st.success(f"✅ Integral using {method}: `{result:.4E}`")
                         except Exception as e:
                             st.error(f"Integration error: {e}")
-
+'''
 def plot_pie_chart():
     st.title("🥧 Pie Chart Visualization")
     uploaded_file = st.file_uploader("Upload your data file", key="piechart")
