@@ -29,7 +29,7 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_g
 
     plt.figure(figsize=(10, 6))
     pattern_styles = {'solid': '-', 'dotted': ':', 'dashed': '--', 'dashdot': '-.'}
-    marker_styles_available = ['•','◉','★','☆','o', '■','□','◆','◇','^', 'X', '*', '+', 'x']
+    marker_styles_available = ['o', 's', '^', 'D', '*', '+', 'x']
 
     # ------------------ Colors ------------------
     color_idx = 0
