@@ -98,7 +98,9 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_g
     plt.xticks(fontsize=font_sizes.get("ticks", 12))
     plt.yticks(fontsize=font_sizes.get("ticks", 12))
     plt.grid(True)
-    plt.legend(title="Legend", fontsize=font_sizes.get("legend", 12))
+    st.sidebar.checkbox("show legend",value=True)
+    if show_legend:
+        plt.legend(title="Legend", fontsize=font_sizes.get("legend", 12))    
     plt.tight_layout()
     st.pyplot(plt)
 
