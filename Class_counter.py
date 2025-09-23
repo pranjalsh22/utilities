@@ -60,12 +60,13 @@ default_schedule = {
     "Friday": ["MATH121", "PHYS602", "MATH121"],
 }
 
-st.header("Weekly Schedule (Editable)")
+st.header("Weekly Schedule")
 
 schedule = {}
 all_subjects = set()
 
 for day, subjects in default_schedule.items():
+    st.header(f"{day} schedule")
     num_subjects = st.number_input(
         f"Number of subjects on {day}", min_value=0, max_value=10, value=len(subjects), key=f"{day}_num"
     )
