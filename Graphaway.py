@@ -2,9 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.interpolate import interp1d
 from scipy.integrate import simpson, trapezoid
-
 
 # ------------------ Utilities ------------------
 spectral_regions = [
@@ -36,12 +34,19 @@ def read_file(uploaded_file):
 def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_groups,
                color_labels, pattern_labels, bullet_labels,
                x_log_scale, y_log_scale, x_range, y_range, 
-               title, x_label, y_label, font_sizes, marker_size,
-               show_background=False, smooth_curves=False, show_markers=True):
+               title, x_label, y_label, font_sizes, marker_size, show_background=False):
 
     plt.figure(figsize=(10, 6))
     pattern_styles = {'solid': '-', 'dotted': ':', 'dashed': '--', 'dashdot': '-.'}
     marker_styles_available = ['o', 's', '^', 'D', '*', '+', 'x']
+
+    # --- Background spectral regions ---
+    if show_background and y_range:
+        for label, x_min, x_max, color in spectral_regions:
+            plt.fill_between(
+                [x_min, x_max], [y_range[0]]*2, [y_range[1]]*2,
+                color=color, alpha=0.2, label=label
+            )
 
     # ------------------ Colors ------------------
     color_idx = 0
@@ -77,57 +82,24 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_g
             column_markers[col] = marker
             column_marker_labels[col] = label
 
-    # ------------------ Background Spectral Regions ------------------
-    spectral_regions = [
-        ("Radio", 0, 3e9, "lightblue"),
-        ("Microwave", 3e9, 3e12, "lightgreen"),
-        ("Infrared", 3e12, 2.99e14, "lightcoral"),
-        ("Visible", 3.01e14, 7.5e14, "khaki"),
-        ("UV", 7.5e14, 3e16, "violet"),
-        ("X-ray", 3e16, 3e19, "orange"),
-        ("Gamma-ray", 3e19, 3e30, "red")
-    ]
-    if show_background:
-        for label, x_min, x_max, color in spectral_regions:
-            plt.axvspan(x_min, x_max, color=color, alpha=0.2, label=label)
-
-    # ------------------ Plot Data ------------------
     used_labels = set()
-    for col in y_columns:
-        x = data[x_column].values
-        y = data[col].values
-        if smooth_curves and len(x) >= 3:
-            mask = ~np.isnan(x) & ~np.isnan(y)
-            x_clean = x[mask]
-            y_clean = y[mask]
-        
-            # remove duplicates
-            x_clean, idx = np.unique(x_clean, return_index=True)
-            y_clean = y_clean[idx]
-        
-            if len(x_clean) >= 3:
-                f = interp1d(x_clean, y_clean, kind='linear')
-                x_plot = np.linspace(x_clean.min(), x_clean.max(), 500)
-                y_plot = f(x_plot)
-                marker = None
-            else:
-                x_plot, y_plot = x_clean, y_clean
-                marker = column_markers.get(col, 'o') if show_markers else None
 
-        
-        color = column_colors.get(col, 'blue')
+    for col in y_columns:
+        color = column_colors.get(col, plt.cm.tab10(color_idx % 10))
+        if col not in column_colors:
+            color_idx += 1
         linestyle = column_linestyles.get(col, '-')
+        marker = column_markers.get(col, 'o')
         label = column_labels.get(col) or column_pattern_labels.get(col) or column_marker_labels.get(col) or col
 
         if label not in used_labels:
-            plt.plot(x_plot, y_plot, linestyle=linestyle, marker=marker, markersize=marker_size,
-                     color=color, label=label)
+            plt.plot(data[x_column], data[col], marker=marker, markersize=marker_size,
+                     linestyle=linestyle, color=color, label=label)
             used_labels.add(label)
         else:
-            plt.plot(x_plot, y_plot, linestyle=linestyle, marker=marker, markersize=marker_size,
-                     color=color)
+            plt.plot(data[x_column], data[col], marker=marker, markersize=marker_size,
+                     linestyle=linestyle, color=color)
 
-    # ------------------ Axes & Labels ------------------
     if x_log_scale:
         plt.xscale('log')
     if y_log_scale:
@@ -137,6 +109,7 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_g
     if y_range:
         plt.ylim(y_range)
     
+        
     plt.title(title, fontsize=font_sizes.get("title", 16))
     plt.xlabel(x_label, fontsize=font_sizes.get("labels", 14))
     plt.ylabel(y_label, fontsize=font_sizes.get("labels", 14))
@@ -144,9 +117,10 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_g
     plt.yticks(fontsize=font_sizes.get("ticks", 12))
     plt.grid(True)
     if show_legend:
-        plt.legend(title="Legend", fontsize=font_sizes.get("legend", 12))
+        plt.legend(title="Legend", fontsize=font_sizes.get("legend", 12))    
     plt.tight_layout()
     st.pyplot(plt)
+
 
 def integrate_curve(x_data, y_data, log_x=False, log_y=False, method='trapezoid'):
     if log_x:
@@ -269,14 +243,12 @@ def linegraph():
                     pattern_labels.append((label, pattern))
         
         show_background = st.sidebar.checkbox("Show Spectral Backgrounds", value=False)
-        smooth_curves = st.sidebar.checkbox("Smooth Curves", value=False)
-        show_markers = st.sidebar.checkbox("Show Markers on Original Data", value=True)
 
         if st.button("📊 Plot Line Graph"):
             if not color_groups:
                 color_groups = [[col] for col in y_columns]
                 color_labels = y_columns
-
+        
             plot_graph(
                 data, x_column, y_columns,
                 color_groups, pattern_groups, bullet_groups,
@@ -284,9 +256,9 @@ def linegraph():
                 x_log_scale, y_log_scale,
                 x_range, y_range,
                 title, x_axis_label, y_axis_label,
-                font_sizes, marker_size,show_background = show_background,
-                smooth_curves=smooth_curves,
-                show_markers=show_markers)
+                font_sizes, marker_size,show_background = show_background
+
+            )
 
 
         # ------------------ Integration ------------------
