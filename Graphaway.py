@@ -157,10 +157,7 @@ def linegraph():
 
         columns = data.columns.tolist()
         x_column = st.selectbox("Select X-axis column", columns)
-        if len(columns) > 1:
-            y_columns = st.multiselect("Select Y-axis columns", columns, default=[columns[1]])
-        else:
-            y_columns = st.multiselect("Select Y-axis columns", columns)
+        y_columns = st.multiselect("Select Y-axis columns", columns, default=[columns[1]])
 
         st.sidebar.header("📝 Labels & Title")
         title = st.sidebar.text_input("Graph Title", f"Multiple Curves: Y vs {x_column}")
