@@ -275,7 +275,7 @@ def linegraph():
                 x_log_scale, y_log_scale,
                 x_range, y_range,
                 title, x_axis_label, y_axis_label,
-                font_sizes, marker_size,show_background = show_background
+                font_sizes, marker_size,show_background = show_background,
                 smooth_curves=smooth_curves,
                 show_markers=show_markers)
 
