@@ -96,16 +96,25 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_g
     for col in y_columns:
         x = data[x_column].values
         y = data[col].values
-
         if smooth_curves and len(x) >= 3:
-            f = interp1d(x, y, kind='linear')
-            x_plot = np.linspace(x.min(), x.max(), 500)
-            y_plot = f(x_plot)
-            marker = None  # remove markers on smooth curve
-        else:
-            x_plot, y_plot = x, y
-            marker = column_markers.get(col, 'o') if show_markers else None
+            mask = ~np.isnan(x) & ~np.isnan(y)
+            x_clean = x[mask]
+            y_clean = y[mask]
+        
+            # remove duplicates
+            x_clean, idx = np.unique(x_clean, return_index=True)
+            y_clean = y_clean[idx]
+        
+            if len(x_clean) >= 3:
+                f = interp1d(x_clean, y_clean, kind='linear')
+                x_plot = np.linspace(x_clean.min(), x_clean.max(), 500)
+                y_plot = f(x_plot)
+                marker = None
+            else:
+                x_plot, y_plot = x_clean, y_clean
+                marker = column_markers.get(col, 'o') if show_markers else None
 
+        
         color = column_colors.get(col, 'blue')
         linestyle = column_linestyles.get(col, '-')
         label = column_labels.get(col) or column_pattern_labels.get(col) or column_marker_labels.get(col) or col
