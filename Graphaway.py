@@ -34,19 +34,12 @@ def read_file(uploaded_file):
 def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_groups,
                color_labels, pattern_labels, bullet_labels,
                x_log_scale, y_log_scale, x_range, y_range, 
-               title, x_label, y_label, font_sizes, marker_size, show_background=False):
+               title, x_label, y_label, font_sizes, marker_size,
+               show_background=False):
 
     plt.figure(figsize=(10, 6))
     pattern_styles = {'solid': '-', 'dotted': ':', 'dashed': '--', 'dashdot': '-.'}
     marker_styles_available = ['o', 's', '^', 'D', '*', '+', 'x']
-
-    # --- Background spectral regions ---
-    if show_background and y_range:
-        for label, x_min, x_max, color in spectral_regions:
-            plt.fill_between(
-                [x_min, x_max], [y_range[0]]*2, [y_range[1]]*2,
-                color=color, alpha=0.2, label=label
-            )
 
     # ------------------ Colors ------------------
     color_idx = 0
@@ -82,8 +75,22 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_g
             column_markers[col] = marker
             column_marker_labels[col] = label
 
-    used_labels = set()
+    # ------------------ Background Spectral Regions ------------------
+    spectral_regions = [
+        ("Radio", 0, 3e9, "lightblue"),
+        ("Microwave", 3e9, 3e12, "lightgreen"),
+        ("Infrared", 3e12, 2.99e14, "lightcoral"),
+        ("Visible", 3.01e14, 7.5e14, "khaki"),
+        ("UV", 7.5e14, 3e16, "violet"),
+        ("X-ray", 3e16, 3e19, "orange"),
+        ("Gamma-ray", 3e19, 3e30, "red")
+    ]
+    if show_background:
+        for label, x_min, x_max, color in spectral_regions:
+            plt.axvspan(x_min, x_max, color=color, alpha=0.2, label=label)
 
+    # ------------------ Plot Data ------------------
+    used_labels = set()
     for col in y_columns:
         color = column_colors.get(col, plt.cm.tab10(color_idx % 10))
         if col not in column_colors:
@@ -100,6 +107,7 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_g
             plt.plot(data[x_column], data[col], marker=marker, markersize=marker_size,
                      linestyle=linestyle, color=color)
 
+    # ------------------ Axes & Labels ------------------
     if x_log_scale:
         plt.xscale('log')
     if y_log_scale:
@@ -109,7 +117,6 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_g
     if y_range:
         plt.ylim(y_range)
     
-        
     plt.title(title, fontsize=font_sizes.get("title", 16))
     plt.xlabel(x_label, fontsize=font_sizes.get("labels", 14))
     plt.ylabel(y_label, fontsize=font_sizes.get("labels", 14))
