@@ -67,7 +67,7 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_g
 
     used_labels = set()
 
-    for col in y_columns:
+    for col in :
         color = column_colors.get(col, plt.cm.tab10(color_idx % 10))
         if col not in column_colors:
             color_idx += 1
@@ -157,7 +157,10 @@ def linegraph():
 
         columns = data.columns.tolist()
         x_column = st.selectbox("Select X-axis column", columns)
-        y_columns = st.multiselect("Select Y-axis columns", columns, default=[columns[1]])
+        if len(columns) > 1:
+            y_columns = st.multiselect("Select Y-axis columns", columns, default=[columns[1]])
+        else:
+            y_columns = st.multiselect("Select Y-axis columns", columns)
 
         st.sidebar.header("📝 Labels & Title")
         title = st.sidebar.text_input("Graph Title", f"Multiple Curves: Y vs {x_column}")
