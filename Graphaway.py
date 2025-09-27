@@ -98,8 +98,7 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_g
         y = data[col].values
 
         if smooth_curves and len(x) >= 3:
-            # Cubic interpolation for smooth curve
-            f = interp1d(x, y, kind='cubic')
+            f = interp1d(x, y, kind='quadratic')
             x_plot = np.linspace(x.min(), x.max(), 500)
             y_plot = f(x_plot)
             marker = None  # remove markers on smooth curve
