@@ -5,6 +5,15 @@ import numpy as np
 from scipy.integrate import simpson, trapezoid
 
 # ------------------ Utilities ------------------
+spectral_regions = [
+    ("Radio", 0, 3e9, "lightblue"),
+    ("Microwave", 3e9, 3e12, "lightgreen"),
+    ("Infrared", 3e12, 2.99e14, "lightcoral"),
+    ("Visible", 3.01e14, 7.5e14, "khaki"),
+    ("UV", 7.5e14, 3e16, "violet"),
+    ("X-ray", 3e16, 3e19, "orange"),
+    ("Gamma-ray", 3e19, 3e30, "red")
+]
 
 def read_file(uploaded_file):
     try:
@@ -25,11 +34,19 @@ def read_file(uploaded_file):
 def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_groups,
                color_labels, pattern_labels, bullet_labels,
                x_log_scale, y_log_scale, x_range, y_range, 
-               title, x_label, y_label, font_sizes, marker_size):
+               title, x_label, y_label, font_sizes, marker_size, show_background=False):
 
     plt.figure(figsize=(10, 6))
     pattern_styles = {'solid': '-', 'dotted': ':', 'dashed': '--', 'dashdot': '-.'}
     marker_styles_available = ['o', 's', '^', 'D', '*', '+', 'x']
+
+    # --- Background spectral regions ---
+    if show_background and y_range:
+        for label, x_min, x_max, color in spectral_regions:
+            plt.fill_between(
+                [x_min, x_max], [y_range[0]]*2, [y_range[1]]*2,
+                color=color, alpha=0.2, label=label
+            )
 
     # ------------------ Colors ------------------
     color_idx = 0
@@ -224,6 +241,8 @@ def linegraph():
                 if cols:
                     pattern_groups.append(cols)
                     pattern_labels.append((label, pattern))
+        
+        show_background = st.sidebar.checkbox("Show Spectral Backgrounds", value=False)
 
         if st.button("📊 Plot Line Graph"):
             if not color_groups:
@@ -237,7 +256,8 @@ def linegraph():
                 x_log_scale, y_log_scale,
                 x_range, y_range,
                 title, x_axis_label, y_axis_label,
-                font_sizes, marker_size
+                font_sizes, marker_size,show_background = show_background
+
             )
 
 
