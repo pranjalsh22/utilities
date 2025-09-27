@@ -84,7 +84,7 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_g
 
     used_labels = set()
 
-    for col in :
+    for col in y_columns:
         color = column_colors.get(col, plt.cm.tab10(color_idx % 10))
         if col not in column_colors:
             color_idx += 1
