@@ -91,7 +91,15 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_g
         plt.xlim(x_range)
     if y_range:
         plt.ylim(y_range)
-
+    if st.toggle("HZ spectrum"):
+        plt.fill_between(np.linspace(0,3e9,5),np.linspace(10**24,10**24,5),alpha=0.3,label='radio')
+        plt.fill_between(np.linspace(3e9,3e12,5),np.linspace(10**24,10**24,5),alpha=0.3,label='microwave')
+        plt.fill_between(np.linspace(3e12,2.99e14,5),np.linspace(10**24,10**24,5),alpha=0.3,label='infrared')
+        plt.fill_between(np.linspace(3.01e14,7.5e14,5),np.linspace(10**24,10**24,5),alpha=0.3,label='visible')
+        plt.fill_between(np.linspace(7.5e14,3e16,5),np.linspace(10**24,10**24,5),alpha=0.3,label='UV')
+        plt.fill_between(np.linspace(3e16,3e19,5),np.linspace(10**24,10**24,5),alpha=0.3,label='X-ray')
+        plt.fill_between(np.linspace(3e19,3e30,5),np.linspace(10**24,10**24,5),alpha=0.3,label='Gamma-ray')
+        
     plt.title(title, fontsize=font_sizes.get("title", 16))
     plt.xlabel(x_label, fontsize=font_sizes.get("labels", 14))
     plt.ylabel(y_label, fontsize=font_sizes.get("labels", 14))
