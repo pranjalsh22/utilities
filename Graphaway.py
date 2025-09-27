@@ -2,7 +2,8 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.integrate import simpson, trapezoid
+from scipy.integrate import simpson, trapezoid, interp1d
+
 
 # ------------------ Utilities ------------------
 spectral_regions = [
@@ -35,7 +36,7 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_g
                color_labels, pattern_labels, bullet_labels,
                x_log_scale, y_log_scale, x_range, y_range, 
                title, x_label, y_label, font_sizes, marker_size,
-               show_background=False):
+               show_background=False, smooth_curves=False, show_markers=True):
 
     plt.figure(figsize=(10, 6))
     pattern_styles = {'solid': '-', 'dotted': ':', 'dashed': '--', 'dashdot': '-.'}
@@ -92,20 +93,30 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_g
     # ------------------ Plot Data ------------------
     used_labels = set()
     for col in y_columns:
-        color = column_colors.get(col, plt.cm.tab10(color_idx % 10))
-        if col not in column_colors:
-            color_idx += 1
+        x = data[x_column].values
+        y = data[col].values
+
+        if smooth_curves and len(x) >= 3:
+            # Cubic interpolation for smooth curve
+            f = interp1d(x, y, kind='cubic')
+            x_plot = np.linspace(x.min(), x.max(), 500)
+            y_plot = f(x_plot)
+            marker = None  # remove markers on smooth curve
+        else:
+            x_plot, y_plot = x, y
+            marker = column_markers.get(col, 'o') if show_markers else None
+
+        color = column_colors.get(col, 'blue')
         linestyle = column_linestyles.get(col, '-')
-        marker = column_markers.get(col, 'o')
         label = column_labels.get(col) or column_pattern_labels.get(col) or column_marker_labels.get(col) or col
 
         if label not in used_labels:
-            plt.plot(data[x_column], data[col], marker=marker, markersize=marker_size,
-                     linestyle=linestyle, color=color, label=label)
+            plt.plot(x_plot, y_plot, linestyle=linestyle, marker=marker, markersize=marker_size,
+                     color=color, label=label)
             used_labels.add(label)
         else:
-            plt.plot(data[x_column], data[col], marker=marker, markersize=marker_size,
-                     linestyle=linestyle, color=color)
+            plt.plot(x_plot, y_plot, linestyle=linestyle, marker=marker, markersize=marker_size,
+                     color=color)
 
     # ------------------ Axes & Labels ------------------
     if x_log_scale:
@@ -124,10 +135,9 @@ def plot_graph(data, x_column, y_columns, color_groups, pattern_groups, bullet_g
     plt.yticks(fontsize=font_sizes.get("ticks", 12))
     plt.grid(True)
     if show_legend:
-        plt.legend(title="Legend", fontsize=font_sizes.get("legend", 12))    
+        plt.legend(title="Legend", fontsize=font_sizes.get("legend", 12))
     plt.tight_layout()
     st.pyplot(plt)
-
 
 def integrate_curve(x_data, y_data, log_x=False, log_y=False, method='trapezoid'):
     if log_x:
@@ -250,12 +260,14 @@ def linegraph():
                     pattern_labels.append((label, pattern))
         
         show_background = st.sidebar.checkbox("Show Spectral Backgrounds", value=False)
+        smooth_curves = st.sidebar.checkbox("Smooth Curves", value=False)
+        show_markers = st.sidebar.checkbox("Show Markers on Original Data", value=True)
 
         if st.button("📊 Plot Line Graph"):
             if not color_groups:
                 color_groups = [[col] for col in y_columns]
                 color_labels = y_columns
-        
+
             plot_graph(
                 data, x_column, y_columns,
                 color_groups, pattern_groups, bullet_groups,
@@ -264,8 +276,8 @@ def linegraph():
                 x_range, y_range,
                 title, x_axis_label, y_axis_label,
                 font_sizes, marker_size,show_background = show_background
-
-            )
+                smooth_curves=smooth_curves,
+                show_markers=show_markers)
 
 
         # ------------------ Integration ------------------
