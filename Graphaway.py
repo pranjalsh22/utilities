@@ -176,7 +176,7 @@ def linegraph():
 
         # ------------------ Sidebar customization ------------------
         st.sidebar.header("🖊️ Graph Styling")
-        marker_size = st.sidebar.number_input("Marker size", min_value=1, max_value=20, value=6)
+        marker_size = st.sidebar.number_input("Marker size", min_value=0, max_value=20, value=6)
         font_sizes = {
             "title": st.sidebar.number_input("Title font size", value=16),
             "labels": st.sidebar.number_input("Axis labels font size", value=14),
