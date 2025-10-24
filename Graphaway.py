@@ -17,7 +17,7 @@ spectral_regions = [
 
 def read_file(uploaded_file):
     try:
-        if st.checkbox("Small space is separating criteria"):
+        if st.checkbox("Its a TXT file"):
             df = pd.read_csv(uploaded_file, delim_whitespace=True, engine='python')
         else:
             df = pd.read_csv(uploaded_file, engine='python')
