@@ -155,6 +155,7 @@ def integrate_curve(x_data, y_data, log_x=False, log_y=False, method='trapezoid'
 
 def linegraph():
     st.title("📈 Line Graph Plotting Tool")
+    st.link_button("download sample data","https://drive.google.com/drive/folders/12_u23IiQ-Xoi9yG2Sk_FNwD0akuUgpyH?usp=share_link")
     uploaded_file = st.file_uploader("📤 Upload your data file", key="linegraph")
 
     if uploaded_file is not None:
