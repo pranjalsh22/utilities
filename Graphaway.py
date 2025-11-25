@@ -155,6 +155,7 @@ def integrate_curve(x_data, y_data, log_x=False, log_y=False, method='trapezoid'
 
 def linegraph():
     st.title("📈 Line Graph Plotting Tool")
+    st.write("Upload file to explore more features")
     st.link_button("Download sample data files","https://drive.google.com/drive/folders/12_u23IiQ-Xoi9yG2Sk_FNwD0akuUgpyH?usp=share_link")
     uploaded_file = st.file_uploader("📤 Upload your data file", key="linegraph")
 
@@ -344,15 +345,14 @@ def plot_bar_chart():
 
 # ------------------ Main ------------------
 
-def main():
-    st.sidebar.title("Visualization Tools")
-    option = st.sidebar.selectbox("Choose a tool", ["Line Graph Plot", "Pie Chart", "Bar Chart"])
-    if option == "Line Graph Plot":
-        linegraph()
-    elif option == "Pie Chart":
-        plot_pie_chart()
-    elif option == "Bar Chart":
-        plot_bar_chart()
 
-if __name__ == "__main__":
-    main()
+st.sidebar.title("Visualization Tools")
+st.sidebar.write("Developed by Pranjal Sharma")
+option = st.sidebar.selectbox("Choose a tool", ["Line Graph Plot", "Pie Chart", "Bar Chart"])
+if option == "Line Graph Plot":
+    linegraph()
+elif option == "Pie Chart":
+    plot_pie_chart()
+elif option == "Bar Chart":
+    plot_bar_chart()
+
