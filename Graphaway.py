@@ -159,26 +159,26 @@ def linegraph():
     st.link_button("Download sample data files","https://drive.google.com/drive/folders/12_u23IiQ-Xoi9yG2Sk_FNwD0akuUgpyH?usp=share_link")
     uploaded_file = st.file_uploader("📤 Upload your data file", key="linegraph")
 #----------youtube tutorial--------
-st.markdown(
-    """
-    <a href="https://m.youtube.com/watch?v=aGHeqNbDjW8" style="
-        text-decoration:none;
-        display:inline-flex;
-        align-items:center;
-        background:#ff0000;
-        color:white;
-        padding:10px 16px;
-        border-radius:12px;
-        font-size:18px;
-        font-weight:600;">
-        
-        <img src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png"
-             width="24" style="margin-right:10px;">
-        YouTube
-    </a>
-    """,
-    unsafe_allow_html=True
-)
+    st.markdown(
+        """
+        <a href="https://m.youtube.com/watch?v=aGHeqNbDjW8" style="
+            text-decoration:none;
+            display:inline-flex;
+            align-items:center;
+            background:#ff0000;
+            color:white;
+            padding:10px 16px;
+            border-radius:12px;
+            font-size:18px;
+            font-weight:600;">
+            
+            <img src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png"
+                 width="24" style="margin-right:10px;">
+            YouTube
+        </a>
+        """,
+        unsafe_allow_html=True
+    )
 #----------------------------------
     if uploaded_file is not None:
         data = read_file(uploaded_file)
