@@ -160,24 +160,24 @@ def linegraph():
     uploaded_file = st.file_uploader("📤 Upload your data file", key="linegraph")
 #----------youtube tutorial--------
     
+
     st.markdown(
         """
-        <a href="https://m.youtube.com/watch?v=aGHeqNbDjW8" target="_blank" style="
-            text-decoration:none;
-            display:inline-flex;
-            align-items:center;
-            background:#ff0000;
-            color:white;
-            padding:10px 16px;
-            border-radius:12px;
-            font-size:18px;
-            font-weight:600;
-            ">
-            
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/2560px-YouTube_full-color_icon_%282017%29.svg.png"
-                 width="24" style="margin-right:10px;">
-            YouTube
-        </a>
+    <a href="https://m.youtube.com/watch?v=aGHeqNbDjW8" target="_blank" style="
+        text-decoration:none;
+        display:inline-flex;
+        align-items:center;
+        background:#ff0000;
+        color:white;
+        padding:10px 16px;
+        border-radius:12px;
+        font-size:18px;
+        font-weight:600;
+    ">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/256px-YouTube_full-color_icon_%282017%29.svg.png"
+             width="24" style="margin-right:10px;">
+        YouTube
+    </a>
         """,
         unsafe_allow_html=True
     )
