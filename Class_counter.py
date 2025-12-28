@@ -1,6 +1,7 @@
 import streamlit as st
 import datetime
 import pandas as pd
+import math
 
 st.set_page_config(page_title="Class Counter", layout="wide")
 st.title("Class Counter – B.Sc Physics (H) Sem VIII (2025–26)")
@@ -14,7 +15,7 @@ start_date = st.date_input("Semester Start Date", default_start)
 end_date   = st.date_input("Semester End Date", default_end)
 
 # Weekly Timetable Input
-st.header("Weekly Timetable (write 2 entries for 2-hour classes)")
+st.header("Weekly Timetable")
 
 default_timetable = """Monday: Optical Fiber and Communication, Digital Electronics and Microprocessors, Advanced Materials Physics, Advanced Materials Physics
 Tuesday: Digital Electronics and Microprocessors, Astronomical Techniques, Renewable Energy Economics, Astronomical Techniques, Astronomical Techniques
@@ -84,8 +85,17 @@ while d <= end_date:
             counts[s] += 1
     d += datetime.timedelta(days=1)
 
-# Summary
-st.header("Total Classes")
-st.table(pd.DataFrame(
-    [{"Subject": k, "Total Classes": v} for k, v in sorted(counts.items(), key=lambda x: -x[1])]
-))
+# Attendance Table
+rows = []
+for subject, total in counts.items():
+    rows.append({
+        "Subject": subject,
+        "95% Required": math.ceil(0.95 * total),
+        "90% Required": math.ceil(0.90 * total),
+        "85% Required": math.ceil(0.85 * total),
+        "80% Required": math.ceil(0.80 * total),
+        "75% Required": math.ceil(0.75 * total)
+    })
+
+st.header("Attendance Requirements")
+st.table(pd.DataFrame(rows).sort_values("Subject"))
