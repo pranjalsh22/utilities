@@ -31,18 +31,24 @@ def extract_schedule_from_image(image):
     current_day = None
 
     for line in text.split("\n"):
+        line = line.strip()
+
         for d in days:
             if d.lower() in line.lower():
                 current_day = d
 
-        if current_day:
-            words = line.split()
-            for w in words:
-                if any(c.isdigit() for c in w) and len(w) >= 5:
-                    schedule[current_day].append(w.strip())
+        if current_day and len(line) > 3:
+            tokens = [w for w in line.split() if len(w) > 3]
+
+            # Remove day names
+            tokens = [t for t in tokens if t.lower() not in [d.lower() for d in days]]
+
+            # Join tokens into subject names
+            subject = " ".join(tokens)
+            if subject and subject not in schedule[current_day]:
+                schedule[current_day].append(subject)
 
     return schedule
-
 # ---------------------------
 # DATE INPUT
 # ---------------------------
