@@ -2,64 +2,49 @@ import streamlit as st
 import datetime
 import holidays
 import pandas as pd
-import base64
-from openai import OpenAI
+import pytesseract
+import cv2
+import numpy as np
+from PIL import Image
 
-# ---------------------------
-# PAGE CONFIG
-# ---------------------------
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
+
 st.set_page_config(page_title="Class Counter", layout="wide")
 st.title("📚 Class Counter")
 st.write("by Pranjal")
 
 # ---------------------------
-# OPENAI CLIENT
+# IMAGE CLEANING
 # ---------------------------
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+def preprocess_image(img):
+    img = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2GRAY)
+    img = cv2.threshold(img, 160, 255, cv2.THRESH_BINARY)[1]
+    img = cv2.medianBlur(img, 3)
+    return img
 
-def extract_schedule_from_image(image_file):
-    try:
-        image_bytes = image_file.read()
-        encoded = base64.b64encode(image_bytes).decode()
+def extract_schedule_from_image(image):
+    img = preprocess_image(Image.open(image))
+    text = pytesseract.image_to_string(img, config="--psm 6")
 
-        prompt = """
-        Extract weekly timetable from this image.
-        Return ONLY valid JSON in this format:
-        {
-          "Monday": [],
-          "Tuesday": [],
-          "Wednesday": [],
-          "Thursday": [],
-          "Friday": []
-        }
-        """
+    days = ["Monday","Tuesday","Wednesday","Thursday","Friday"]
+    schedule = {d: [] for d in days}
+    current_day = None
 
-        response = client.responses.create(
-            model="gpt-4.1",
-            input=[{
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": "image/jpeg",
-                            "data": encoded
-                        }
-                    }
-                ]
-            }]
-        )
+    for line in text.split("\n"):
+        for d in days:
+            if d.lower() in line.lower():
+                current_day = d
 
-        return eval(response.output_text.strip())
+        if current_day:
+            words = line.split()
+            for w in words:
+                if any(c.isdigit() for c in w) and len(w) >= 5:
+                    schedule[current_day].append(w.strip())
 
-    except Exception as e:
-        st.error("❌ Failed to analyze image. Please check your API key and retry.")
-        st.stop()
+    return schedule
 
 # ---------------------------
-# DATE INPUTS
+# DATE INPUT
 # ---------------------------
 today = datetime.date.today()
 start_date = st.date_input("Start Date", today)
@@ -69,31 +54,12 @@ end_date = st.date_input("End Date", today + datetime.timedelta(weeks=15))
 # HOLIDAYS INDIA
 # ---------------------------
 holiday_list = holidays.India(years=range(start_date.year, end_date.year + 1))
-auto_holidays = {d: name for d, name in holiday_list.items() if start_date <= d <= end_date}
-
 if "holidays" not in st.session_state:
-    st.session_state.holidays = dict(auto_holidays)
+    st.session_state.holidays = {d: name for d, name in holiday_list.items() if start_date <= d <= end_date}
 
 st.header("🏖 Manage Holidays")
-
-if st.session_state.holidays:
-    holiday_df = pd.DataFrame(
-        [{"Date": d, "Holiday": name} for d, name in sorted(st.session_state.holidays.items())]
-    )
-    st.table(holiday_df)
-
-col1, col2 = st.columns(2)
-with col1:
-    new_holiday_date = st.date_input("➕ Add custom holiday", today, key="new_holiday")
-    new_holiday_name = st.text_input("Holiday name", value="Custom Holiday")
-    if st.button("Add Holiday"):
-        st.session_state.holidays[new_holiday_date] = new_holiday_name
-
-with col2:
-    if st.session_state.holidays:
-        remove_date = st.selectbox("Remove holiday", list(st.session_state.holidays.keys()))
-        if st.button("Remove Selected Holiday"):
-            st.session_state.holidays.pop(remove_date, None)
+holiday_df = pd.DataFrame([{"Date": d, "Holiday": n} for d, n in sorted(st.session_state.holidays.items())])
+st.table(holiday_df)
 
 # ---------------------------
 # TIMETABLE IMAGE
@@ -102,63 +68,44 @@ st.header("📸 Upload Timetable Image")
 image_file = st.file_uploader("Upload timetable image", type=["png","jpg","jpeg"])
 
 if image_file:
-    with st.spinner("Analyzing timetable..."):
-        default_schedule = extract_schedule_from_image(image_file)
+    with st.spinner("Reading timetable..."):
+        schedule = extract_schedule_from_image(image_file)
     st.success("Timetable extracted successfully.")
 else:
-    default_schedule = {d: [] for d in ["Monday","Tuesday","Wednesday","Thursday","Friday"]}
+    schedule = {d: [] for d in ["Monday","Tuesday","Wednesday","Thursday","Friday"]}
 
 # ---------------------------
-# WEEKLY SCHEDULE EDITOR
+# WEEKLY EDITOR
 # ---------------------------
 st.header("🗓 Weekly Schedule")
-schedule = {}
 all_subjects = set()
+final_schedule = {}
 
-for day, subjects in default_schedule.items():
-    st.subheader(day)
-    num = st.number_input(f"Number of subjects on {day}", 0, 10, len(subjects), key=f"{day}_num")
-    schedule[day] = []
-    for i in range(num):
-        subj = st.text_input(f"{day} Subject {i+1}", subjects[i] if i < len(subjects) else "", key=f"{day}_{i}")
-        if subj.strip():
-            schedule[day].append(subj)
-            all_subjects.add(subj)
-
-# ---------------------------
-# COMPLETED CLASSES
-# ---------------------------
-st.header("✔ Already Completed Classes")
-completed = {}
-for s in sorted(all_subjects):
-    completed[s] = st.number_input(s, min_value=0, value=0)
+for d, subs in schedule.items():
+    st.subheader(d)
+    final_schedule[d] = []
+    for i, s in enumerate(subs):
+        val = st.text_input(f"{d} Subject {i+1}", s, key=f"{d}_{i}")
+        if val.strip():
+            final_schedule[d].append(val)
+            all_subjects.add(val)
 
 # ---------------------------
-# COUNT FUTURE CLASSES
+# COUNT CLASSES
 # ---------------------------
-future = {s:0 for s in all_subjects}
+future = {s: 0 for s in all_subjects}
 current = start_date
 
 while current <= end_date:
     if current not in st.session_state.holidays:
         day = current.strftime("%A")
-        if day in schedule:
-            for s in schedule[day]:
+        if day in final_schedule:
+            for s in final_schedule[day]:
                 future[s] += 1
     current += datetime.timedelta(days=1)
 
 # ---------------------------
-# FINAL SUMMARY
+# SUMMARY
 # ---------------------------
 st.header("📊 Final Class Summary")
-
-rows=[]
-for s in sorted(all_subjects):
-    rows.append({
-        "Subject": s,
-        "Completed": completed[s],
-        "Upcoming": future[s],
-        "Total": completed[s]+future[s]
-    })
-
-st.table(pd.DataFrame(rows))
+st.table(pd.DataFrame(future.items(), columns=["Subject", "Total Classes"]))
