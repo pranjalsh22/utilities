@@ -17,45 +17,59 @@ start_date = st.date_input("Semester Start Date", default_start)
 end_date   = st.date_input("Semester End Date", default_end)
 
 # ---------------------------
-# Weekly Timetable
+# Weekly Timetable (Editable Defaults)
 # ---------------------------
-schedule = {
+st.header("🗓 Weekly Timetable (edit if required)")
+
+default_schedule = {
     "Monday": [
-        "Optical Fiber and Communication (RKC)",
-        "Digital Electronics and Microprocessors (GAS)",
+        "Optical Fiber and Communication",
+        "Digital Electronics and Microprocessors",
         "Advanced Materials Physics Lab"
     ],
     "Tuesday": [
-        "Digital Electronics and Microprocessors (GAS)",
-        "Astronomical Techniques (CKO)",
+        "Digital Electronics and Microprocessors",
+        "Astronomical Techniques",
         "Renewable Energy Economics",
         "Astronomical Techniques Lab"
     ],
     "Wednesday": [
-        "Space and Planetary Science (ADK)",
-        "Digital Electronics and Microprocessors (GAS)",
+        "Space and Planetary Science",
+        "Digital Electronics and Microprocessors",
         "Renewable Energy Economics",
-        "Optical Fiber and Communication (RKC)"
+        "Optical Fiber and Communication"
     ],
     "Thursday": [
-        "Space and Planetary Science (ADK)",
-        "Astronomical Techniques (CKO)"
+        "Space and Planetary Science",
+        "Astronomical Techniques"
     ],
     "Friday": [
-        "Astronomical Techniques (CKO)",
-        "Space and Planetary Science (ADK)",
-        "Optical Fiber and Communication (RKC)",
+        "Astronomical Techniques Lab",
+        "Space and Planetary Science",
+        "Optical Fiber and Communication",
         "Advanced Materials Physics Lab"
     ]
 }
 
+schedule = {}
+all_subjects = set()
+
+for day, subjects in default_schedule.items():
+    st.subheader(day)
+    schedule[day] = []
+    for i, subj in enumerate(subjects):
+        val = st.text_input(f"{day} – Class {i+1}", subj, key=f"{day}_{i}")
+        if val.strip():
+            schedule[day].append(val)
+            base = val.replace(" Lab", "").strip()
+            all_subjects.add(base)
+
 # ---------------------------
-# Auto Holidays (India)
+# Holidays (India + Winter Break)
 # ---------------------------
 holiday_list = holidays.India(years=range(start_date.year, end_date.year + 1))
 auto_holidays = {d: name for d, name in holiday_list.items() if start_date <= d <= end_date}
 
-# Add Winter Break
 winter_start = datetime.date(2025, 12, 25)
 winter_end   = datetime.date(2026, 1, 5)
 
@@ -67,14 +81,11 @@ while cur <= winter_end:
 if "holidays" not in st.session_state:
     st.session_state.holidays = dict(auto_holidays)
 
-# ---------------------------
-# Manage Holidays
-# ---------------------------
 st.header("🏖 Manage Holidays")
 
 if st.session_state.holidays:
     df = pd.DataFrame(
-        [{"Date": d, "Holiday": n} for d, n in sorted(st.session_state.holidays.items())]
+        [{"Date": d, "Holiday": n} for d,n in sorted(st.session_state.holidays.items())]
     )
     st.table(df)
 
@@ -93,33 +104,30 @@ with col2:
             st.session_state.holidays.pop(remove_date, None)
 
 # ---------------------------
-# Display Timetable
+# Count Classes (Labs = 2 hours)
 # ---------------------------
-st.header("🗓 Weekly Timetable")
-max_len = max(len(v) for v in schedule.values())
-table = {d: v + [""]*(max_len-len(v)) for d,v in schedule.items()}
-st.table(pd.DataFrame(table))
-
-# ---------------------------
-# Count Classes
-# ---------------------------
-subjects = set(sum(schedule.values(), []))
-counts = {s: 0 for s in subjects}
+counts = {s: 0 for s in all_subjects}
 
 d = start_date
 while d <= end_date:
     if d.weekday() < 5 and d not in st.session_state.holidays:
         weekday = d.strftime("%A")
-        for s in schedule.get(weekday, []):
-            counts[s] += 1
+        for entry in schedule.get(weekday, []):
+            base = entry.replace(" Lab", "").strip()
+            if "Lab" in entry:
+                counts[base] += 2
+            else:
+                counts[base] += 1
     d += datetime.timedelta(days=1)
 
 # ---------------------------
 # Final Summary
 # ---------------------------
-st.header("📊 Total Classes in Semester")
+st.header("📊 Total Effective Classes in Semester")
+
 summary = pd.DataFrame([
-    {"Subject": s, "Total Classes": c}
-    for s, c in sorted(counts.items(), key=lambda x: -x[1])
+    {"Subject": s, "Total Classes (1hr eq.)": c}
+    for s,c in sorted(counts.items(), key=lambda x: -x[1])
 ])
+
 st.table(summary)
