@@ -1,9 +1,11 @@
 import streamlit as st
 import pandas as pd
-import pytesseract
 from PIL import Image
 from datetime import datetime
+import os
+import pytesseract
 
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 # ------------------------------------------------------
 # PAGE CONFIG
 # ------------------------------------------------------
