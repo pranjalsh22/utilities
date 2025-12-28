@@ -8,3 +8,6 @@ scipy
 openai
 holidays
 python-dateutil
+pillow
+pytesseract
+opencv-python-headless
