@@ -2,116 +2,124 @@ import streamlit as st
 import datetime
 import holidays
 import pandas as pd
-import pytesseract
-import cv2
-import numpy as np
-from PIL import Image
-
-pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
 st.set_page_config(page_title="Class Counter", layout="wide")
-st.title("📚 Class Counter")
+st.title("📚 Class Counter – B.Sc Physics (H) Sem VIII (2025–26)")
 st.write("by Pranjal")
 
 # ---------------------------
-# IMAGE CLEANING
+# Semester Date Inputs
 # ---------------------------
-def preprocess_image(img):
-    img = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2GRAY)
-    img = cv2.threshold(img, 160, 255, cv2.THRESH_BINARY)[1]
-    img = cv2.medianBlur(img, 3)
-    return img
+default_start = datetime.date(2025, 12, 1)
+default_end   = datetime.date(2026, 3, 21)
 
-def extract_schedule_from_image(image):
-    img = preprocess_image(Image.open(image))
-    text = pytesseract.image_to_string(img, config="--psm 6")
-
-    days = ["Monday","Tuesday","Wednesday","Thursday","Friday"]
-    schedule = {d: [] for d in days}
-    current_day = None
-
-    for line in text.split("\n"):
-        line = line.strip()
-
-        for d in days:
-            if d.lower() in line.lower():
-                current_day = d
-
-        if current_day and len(line) > 3:
-            tokens = [w for w in line.split() if len(w) > 3]
-
-            # Remove day names
-            tokens = [t for t in tokens if t.lower() not in [d.lower() for d in days]]
-
-            # Join tokens into subject names
-            subject = " ".join(tokens)
-            if subject and subject not in schedule[current_day]:
-                schedule[current_day].append(subject)
-
-    return schedule
-# ---------------------------
-# DATE INPUT
-# ---------------------------
-today = datetime.date.today()
-start_date = st.date_input("Start Date", today)
-end_date = st.date_input("End Date", today + datetime.timedelta(weeks=15))
+start_date = st.date_input("Semester Start Date", default_start)
+end_date   = st.date_input("Semester End Date", default_end)
 
 # ---------------------------
-# HOLIDAYS INDIA
+# Weekly Timetable
+# ---------------------------
+schedule = {
+    "Monday": [
+        "Optical Fiber and Communication (RKC)",
+        "Digital Electronics and Microprocessors (GAS)",
+        "Advanced Materials Physics Lab"
+    ],
+    "Tuesday": [
+        "Digital Electronics and Microprocessors (GAS)",
+        "Astronomical Techniques (CKO)",
+        "Renewable Energy Economics",
+        "Astronomical Techniques Lab"
+    ],
+    "Wednesday": [
+        "Space and Planetary Science (ADK)",
+        "Digital Electronics and Microprocessors (GAS)",
+        "Renewable Energy Economics",
+        "Optical Fiber and Communication (RKC)"
+    ],
+    "Thursday": [
+        "Space and Planetary Science (ADK)",
+        "Astronomical Techniques (CKO)"
+    ],
+    "Friday": [
+        "Astronomical Techniques (CKO)",
+        "Space and Planetary Science (ADK)",
+        "Optical Fiber and Communication (RKC)",
+        "Advanced Materials Physics Lab"
+    ]
+}
+
+# ---------------------------
+# Auto Holidays (India)
 # ---------------------------
 holiday_list = holidays.India(years=range(start_date.year, end_date.year + 1))
+auto_holidays = {d: name for d, name in holiday_list.items() if start_date <= d <= end_date}
+
+# Add Winter Break
+winter_start = datetime.date(2025, 12, 25)
+winter_end   = datetime.date(2026, 1, 5)
+
+cur = winter_start
+while cur <= winter_end:
+    auto_holidays[cur] = "Winter Break"
+    cur += datetime.timedelta(days=1)
+
 if "holidays" not in st.session_state:
-    st.session_state.holidays = {d: name for d, name in holiday_list.items() if start_date <= d <= end_date}
+    st.session_state.holidays = dict(auto_holidays)
 
+# ---------------------------
+# Manage Holidays
+# ---------------------------
 st.header("🏖 Manage Holidays")
-holiday_df = pd.DataFrame([{"Date": d, "Holiday": n} for d, n in sorted(st.session_state.holidays.items())])
-st.table(holiday_df)
+
+if st.session_state.holidays:
+    df = pd.DataFrame(
+        [{"Date": d, "Holiday": n} for d, n in sorted(st.session_state.holidays.items())]
+    )
+    st.table(df)
+
+col1, col2 = st.columns(2)
+
+with col1:
+    new_date = st.date_input("➕ Add custom holiday", default_start)
+    new_name = st.text_input("Holiday name", "Custom Holiday")
+    if st.button("Add Holiday"):
+        st.session_state.holidays[new_date] = new_name
+
+with col2:
+    if st.session_state.holidays:
+        remove_date = st.selectbox("Remove holiday", list(st.session_state.holidays.keys()))
+        if st.button("Remove Selected Holiday"):
+            st.session_state.holidays.pop(remove_date, None)
 
 # ---------------------------
-# TIMETABLE IMAGE
+# Display Timetable
 # ---------------------------
-st.header("📸 Upload Timetable Image")
-image_file = st.file_uploader("Upload timetable image", type=["png","jpg","jpeg"])
-
-if image_file:
-    with st.spinner("Reading timetable..."):
-        schedule = extract_schedule_from_image(image_file)
-    st.success("Timetable extracted successfully.")
-else:
-    schedule = {d: [] for d in ["Monday","Tuesday","Wednesday","Thursday","Friday"]}
+st.header("🗓 Weekly Timetable")
+max_len = max(len(v) for v in schedule.values())
+table = {d: v + [""]*(max_len-len(v)) for d,v in schedule.items()}
+st.table(pd.DataFrame(table))
 
 # ---------------------------
-# WEEKLY EDITOR
+# Count Classes
 # ---------------------------
-st.header("🗓 Weekly Schedule")
-all_subjects = set()
-final_schedule = {}
+subjects = set(sum(schedule.values(), []))
+counts = {s: 0 for s in subjects}
 
-for d, subs in schedule.items():
-    st.subheader(d)
-    final_schedule[d] = []
-    for i, s in enumerate(subs):
-        val = st.text_input(f"{d} Subject {i+1}", s, key=f"{d}_{i}")
-        if val.strip():
-            final_schedule[d].append(val)
-            all_subjects.add(val)
+d = start_date
+while d <= end_date:
+    if d.weekday() < 5 and d not in st.session_state.holidays:
+        weekday = d.strftime("%A")
+        for s in schedule.get(weekday, []):
+            counts[s] += 1
+    d += datetime.timedelta(days=1)
 
 # ---------------------------
-# COUNT CLASSES
+# Final Summary
 # ---------------------------
-future = {s: 0 for s in all_subjects}
-current = start_date
-
-while current <= end_date:
-    if current not in st.session_state.holidays:
-        day = current.strftime("%A")
-        if day in final_schedule:
-            for s in final_schedule[day]:
-                future[s] += 1
-    current += datetime.timedelta(days=1)
-
-# ---------------------------
-# SUMMARY
-# ---------------------------
-st.header("📊 Final Class Summary")
-st.table(pd.DataFrame(future.items(), columns=["Subject", "Total Classes"]))
+st.header("📊 Total Classes in Semester")
+summary = pd.DataFrame([
+    {"Subject": s, "Total Classes": c}
+    for s, c in sorted(counts.items(), key=lambda x: -x[1])
+])
+st.table(summary)
