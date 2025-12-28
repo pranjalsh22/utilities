@@ -1,6 +1,5 @@
 import streamlit as st
 import datetime
-import holidays
 import pandas as pd
 
 st.set_page_config(page_title="Class Counter", layout="wide")
@@ -17,18 +16,18 @@ start_date = st.date_input("Semester Start Date", default_start)
 end_date   = st.date_input("Semester End Date", default_end)
 
 # ---------------------------
-# Timetable Input
+# Weekly Timetable Input
 # ---------------------------
 st.header("🗓 Weekly Timetable (write 2 entries for 2-hour classes)")
 
-default_text = """Monday: Optical Fiber and Communication, Digital Electronics and Microprocessors, Advanced Materials Physics, Advanced Materials Physics
+default_timetable = """Monday: Optical Fiber and Communication, Digital Electronics and Microprocessors, Advanced Materials Physics, Advanced Materials Physics
 Tuesday: Digital Electronics and Microprocessors, Astronomical Techniques, Renewable Energy Economics, Astronomical Techniques, Astronomical Techniques
 Wednesday: Space and Planetary Science, Digital Electronics and Microprocessors, Renewable Energy Economics, Optical Fiber and Communication
 Thursday: Space and Planetary Science, Astronomical Techniques
 Friday: Astronomical Techniques, Astronomical Techniques, Space and Planetary Science, Optical Fiber and Communication, Advanced Materials Physics, Advanced Materials Physics
 """
 
-timetable_text = st.text_area("Enter weekly timetable:", default_text, height=220)
+timetable_text = st.text_area("Enter weekly timetable:", default_timetable, height=220)
 
 def parse_timetable(text):
     schedule={}
@@ -43,24 +42,36 @@ schedule=parse_timetable(timetable_text)
 subjects=set(s for subs in schedule.values() for s in subs)
 
 # ---------------------------
-# Holidays
+# Holidays Text Input
 # ---------------------------
-holiday_list = holidays.India(years=range(start_date.year, end_date.year+1))
-auto_holidays={d:n for d,n in holiday_list.items() if start_date<=d<=end_date}
+st.header("🏖 Holidays (one date per line, YYYY-MM-DD)")
 
-winter_start=datetime.date(2025,12,25)
-winter_end=datetime.date(2026,1,5)
+default_holidays = """2025-12-25
+2025-12-26
+2025-12-27
+2025-12-28
+2025-12-29
+2025-12-30
+2025-12-31
+2026-01-01
+2026-01-02
+2026-01-03
+2026-01-04
+2026-01-05
+"""
 
-d=winter_start
-while d<=winter_end:
-    auto_holidays[d]="Winter Break"
-    d+=datetime.timedelta(days=1)
+holiday_text = st.text_area("Enter all holidays:", default_holidays, height=180)
 
-if "holidays" not in st.session_state:
-    st.session_state.holidays=dict(auto_holidays)
+def parse_holidays(text):
+    days=set()
+    for line in text.splitlines():
+        try:
+            days.add(datetime.date.fromisoformat(line.strip()))
+        except:
+            pass
+    return days
 
-st.header("🏖 Manage Holidays")
-st.table(pd.DataFrame([{"Date":d,"Holiday":n} for d,n in st.session_state.holidays.items()]))
+holidays_set=parse_holidays(holiday_text)
 
 # ---------------------------
 # Count Classes
@@ -68,7 +79,7 @@ st.table(pd.DataFrame([{"Date":d,"Holiday":n} for d,n in st.session_state.holida
 counts={s:0 for s in subjects}
 d=start_date
 while d<=end_date:
-    if d.weekday()<5 and d not in st.session_state.holidays:
+    if d.weekday()<5 and d not in holidays_set:
         day=d.strftime("%A")
         for s in schedule.get(day,[]):
             counts[s]+=1
