@@ -397,3 +397,4 @@ for i, app in enumerate(apps):
         st.caption(app['desc'])
         st.markdown("---")
 #--------------------------------------------------------------------------------------------------------
+st.markdown("""<script defer src="https://cloud.umami.is/script.js" data-website-id="5b32328f-cbd6-4e11-8eba-fb882c6b462f"></script>""", unsafe_allow_html=True)
