@@ -24,7 +24,7 @@ default_timetable = """Monday: Optical Fiber and Communication, Digital Electron
 Tuesday: Digital Electronics and Microprocessors, Astronomical Techniques, Renewable Energy Economics, Astronomical Techniques, Astronomical Techniques
 Wednesday: Space and Planetary Science, Digital Electronics and Microprocessors, Renewable Energy Economics, Optical Fiber and Communication
 Thursday: Space and Planetary Science, Astronomical Techniques
-Friday: Astronomical Techniques, Astronomical Techniques, Space and Planetary Science, Optical Fiber and Communication, Advanced Materials Physics, Advanced Materials Physics
+Friday: Astronomical Techniques, Space and Planetary Science, Optical Fiber and Communication, Advanced Materials Physics, Advanced Materials Physics
 """
 
 timetable_text = st.text_area("Enter weekly timetable:", default_timetable, height=220)
@@ -57,7 +57,14 @@ default_holidays = """2025-12-25
 2026-01-02
 2026-01-03
 2026-01-04
-2026-01-05
+2025-12-25
+2026-01-01
+2026-01-13
+2026-01-14
+2026-01-26
+2026-02-15
+2026-03-08
+2026-03-21
 """
 
 holiday_text = st.text_area("Enter all holidays:", default_holidays, height=180)
