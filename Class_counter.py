@@ -18,36 +18,45 @@ st.write("by Pranjal")
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 def extract_schedule_from_image(image_file):
-    image_bytes = image_file.read()
-    encoded = base64.b64encode(image_bytes).decode()
+    try:
+        image_bytes = image_file.read()
+        encoded = base64.b64encode(image_bytes).decode()
 
-    prompt = """
-    You are given an image of a weekly college timetable.
-    Extract only subject codes written inside the table.
+        prompt = """
+        Extract weekly timetable from this image.
+        Return ONLY valid JSON in this format:
+        {
+          "Monday": [],
+          "Tuesday": [],
+          "Wednesday": [],
+          "Thursday": [],
+          "Friday": []
+        }
+        """
 
-    Return ONLY valid JSON in the following format:
-    {
-      "Monday": [],
-      "Tuesday": [],
-      "Wednesday": [],
-      "Thursday": [],
-      "Friday": []
-    }
-    """
+        response = client.responses.create(
+            model="gpt-4.1-mini",
+            input=[{
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "image/jpeg",
+                            "data": encoded
+                        }
+                    }
+                ]
+            }]
+        )
 
-    response = client.responses.create(
-        model="gpt-4.1-mini",
-        input=[{
-            "role": "user",
-            "content": [
-                {"type": "input_text", "text": prompt},
-                {"type": "input_image", "image_base64": encoded}
-            ]
-        }]
-    )
+        return eval(response.output_text.strip())
 
-    text = response.output_text.strip()
-    return eval(text)
+    except Exception as e:
+        st.error("❌ Failed to analyze image. Please check your API key and retry.")
+        st.stop()
 
 # ---------------------------
 # DATE INPUTS
