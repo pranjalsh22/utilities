@@ -17,39 +17,39 @@ start_date = st.date_input("Semester Start Date", default_start)
 end_date   = st.date_input("Semester End Date", default_end)
 
 # ---------------------------
-# Timetable Text Input
+# Timetable Input
 # ---------------------------
-st.header("🗓 Weekly Timetable (Edit freely)")
+st.header("🗓 Weekly Timetable (write 2 entries for 2-hour classes)")
 
-default_text = """Monday: Optical Fiber and Communication, Digital Electronics and Microprocessors, Advanced Materials Physics Lab
-Tuesday: Digital Electronics and Microprocessors, Astronomical Techniques, Renewable Energy Economics, Astronomical Techniques Lab
+default_text = """Monday: Optical Fiber and Communication, Digital Electronics and Microprocessors, Advanced Materials Physics, Advanced Materials Physics
+Tuesday: Digital Electronics and Microprocessors, Astronomical Techniques, Renewable Energy Economics, Astronomical Techniques, Astronomical Techniques
 Wednesday: Space and Planetary Science, Digital Electronics and Microprocessors, Renewable Energy Economics, Optical Fiber and Communication
 Thursday: Space and Planetary Science, Astronomical Techniques
-Friday: Astronomical Techniques Lab, Space and Planetary Science, Optical Fiber and Communication, Advanced Materials Physics Lab
+Friday: Astronomical Techniques, Astronomical Techniques, Space and Planetary Science, Optical Fiber and Communication, Advanced Materials Physics, Advanced Materials Physics
 """
 
 timetable_text = st.text_area("Enter weekly timetable:", default_text, height=220)
 
 def parse_timetable(text):
-    schedule = {}
+    schedule={}
     for line in text.splitlines():
         if ":" in line:
-            day, rest = line.split(":",1)
-            subjects = [s.strip() for s in rest.split(",") if s.strip()]
-            schedule[day.strip()] = subjects
+            day,rest=line.split(":",1)
+            subs=[s.strip() for s in rest.split(",") if s.strip()]
+            schedule[day.strip()]=subs
     return schedule
 
-schedule = parse_timetable(timetable_text)
-all_subjects = set(s.replace(" Lab","").strip() for subs in schedule.values() for s in subs)
+schedule=parse_timetable(timetable_text)
+subjects=set(s for subs in schedule.values() for s in subs)
 
 # ---------------------------
 # Holidays
 # ---------------------------
-holiday_list = holidays.India(years=range(start_date.year, end_date.year + 1))
-auto_holidays = {d:n for d,n in holiday_list.items() if start_date <= d <= end_date}
+holiday_list = holidays.India(years=range(start_date.year, end_date.year+1))
+auto_holidays={d:n for d,n in holiday_list.items() if start_date<=d<=end_date}
 
-winter_start = datetime.date(2025,12,25)
-winter_end   = datetime.date(2026,1,5)
+winter_start=datetime.date(2025,12,25)
+winter_end=datetime.date(2026,1,5)
 
 d=winter_start
 while d<=winter_end:
@@ -62,33 +62,20 @@ if "holidays" not in st.session_state:
 st.header("🏖 Manage Holidays")
 st.table(pd.DataFrame([{"Date":d,"Holiday":n} for d,n in st.session_state.holidays.items()]))
 
-col1,col2=st.columns(2)
-with col1:
-    new_date=st.date_input("Add holiday",default_start)
-    new_name=st.text_input("Holiday name","Custom Holiday")
-    if st.button("Add Holiday"):
-        st.session_state.holidays[new_date]=new_name
-with col2:
-    if st.session_state.holidays:
-        rem=st.selectbox("Remove holiday",list(st.session_state.holidays.keys()))
-        if st.button("Remove Selected"):
-            st.session_state.holidays.pop(rem)
-
 # ---------------------------
 # Count Classes
 # ---------------------------
-counts={s:0 for s in all_subjects}
+counts={s:0 for s in subjects}
 d=start_date
 while d<=end_date:
     if d.weekday()<5 and d not in st.session_state.holidays:
         day=d.strftime("%A")
         for s in schedule.get(day,[]):
-            base=s.replace(" Lab","").strip()
-            counts[base]+=2 if "Lab" in s else 1
+            counts[s]+=1
     d+=datetime.timedelta(days=1)
 
 # ---------------------------
 # Summary
 # ---------------------------
-st.header("📊 Total Effective Classes")
-st.table(pd.DataFrame([{"Subject":k,"Total Classes (1hr eq.)":v} for k,v in sorted(counts.items(),key=lambda x:-x[1])]))
+st.header("📊 Total Classes")
+st.table(pd.DataFrame([{"Subject":k,"Total Classes":v} for k,v in sorted(counts.items(),key=lambda x:-x[1])]))
