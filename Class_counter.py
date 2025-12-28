@@ -35,7 +35,7 @@ def extract_schedule_from_image(image_file):
         """
 
         response = client.responses.create(
-            model="gpt-4.1-mini",
+            model="gpt-4.1",
             input=[{
                 "role": "user",
                 "content": [
