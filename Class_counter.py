@@ -1,123 +1,155 @@
 import streamlit as st
+import datetime
+import holidays
 import pandas as pd
-from PIL import Image
-from datetime import datetime
-import os
-import pytesseract
+import base64
+from openai import OpenAI
 
-pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
-# ------------------------------------------------------
+# ---------------------------
 # PAGE CONFIG
-# ------------------------------------------------------
-st.set_page_config(page_title="Timetable Class Counter", layout="wide")
-st.title("📅 Semester Timetable Class Counter")
+# ---------------------------
+st.set_page_config(page_title="Class Counter", layout="wide")
+st.title("📚 Class Counter")
+st.write("by Pranjal")
 
-# ------------------------------------------------------
-# OCR FUNCTION
-# ------------------------------------------------------
-def extract_text(image):
-    img = Image.open(image)
-    return pytesseract.image_to_string(img)
+# ---------------------------
+# OPENAI CLIENT
+# ---------------------------
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# ------------------------------------------------------
-# PARSE WEEKLY SCHEDULE
-# ------------------------------------------------------
-def parse_schedule(text):
-    days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-    schedule = {d: [] for d in days}
-    current_day = None
+def extract_schedule_from_image(image_file):
+    image_bytes = image_file.read()
+    encoded = base64.b64encode(image_bytes).decode()
 
-    for line in text.split("\n"):
-        for d in days:
-            if d.lower() in line.lower():
-                current_day = d
+    prompt = """
+    You are given an image of a weekly college timetable.
+    Extract only subject codes written inside the table.
 
-        if current_day:
-            words = [w.strip() for w in line.split() if len(w.strip()) > 4]
-            for w in words:
-                if w.isalpha():
-                    schedule[current_day].append(w)
+    Return ONLY valid JSON in the following format:
+    {
+      "Monday": [],
+      "Tuesday": [],
+      "Wednesday": [],
+      "Thursday": [],
+      "Friday": []
+    }
+    """
 
-    return schedule
+    response = client.responses.create(
+        model="gpt-4.1-mini",
+        input=[{
+            "role": "user",
+            "content": [
+                {"type": "input_text", "text": prompt},
+                {"type": "input_image", "image_base64": encoded}
+            ]
+        }]
+    )
 
-# ------------------------------------------------------
-# GENERATE WORKING DAYS
-# ------------------------------------------------------
-def generate_working_days(start, end):
-    all_days = pd.date_range(start, end)
-    return [d for d in all_days if d.weekday() < 5]
+    text = response.output_text.strip()
+    return eval(text)
 
-# ------------------------------------------------------
-# EXPAND HOLIDAY RANGES
-# ------------------------------------------------------
-def expand_holidays(ranges):
-    holidays = set()
-    for s, e in ranges:
-        for d in pd.date_range(s, e):
-            holidays.add(d)
-    return holidays
+# ---------------------------
+# DATE INPUTS
+# ---------------------------
+today = datetime.date.today()
+start_date = st.date_input("Start Date", today)
+end_date = st.date_input("End Date", today + datetime.timedelta(weeks=15))
 
-# ------------------------------------------------------
-# COUNT CLASSES
-# ------------------------------------------------------
-def count_classes(days, schedule):
-    counts = {}
-    for d in days:
-        weekday = d.strftime("%A")
-        if weekday in schedule:
-            for subject in schedule[weekday]:
-                counts[subject] = counts.get(subject, 0) + 1
-    return counts
+# ---------------------------
+# HOLIDAYS INDIA
+# ---------------------------
+holiday_list = holidays.India(years=range(start_date.year, end_date.year + 1))
+auto_holidays = {d: name for d, name in holiday_list.items() if start_date <= d <= end_date}
 
-# ------------------------------------------------------
-# UI INPUTS
-# ------------------------------------------------------
+if "holidays" not in st.session_state:
+    st.session_state.holidays = dict(auto_holidays)
+
+st.header("🏖 Manage Holidays")
+
+if st.session_state.holidays:
+    holiday_df = pd.DataFrame(
+        [{"Date": d, "Holiday": name} for d, name in sorted(st.session_state.holidays.items())]
+    )
+    st.table(holiday_df)
+
 col1, col2 = st.columns(2)
 with col1:
-    image_file = st.file_uploader("Upload Timetable Image", type=["png","jpg","jpeg"])
+    new_holiday_date = st.date_input("➕ Add custom holiday", today, key="new_holiday")
+    new_holiday_name = st.text_input("Holiday name", value="Custom Holiday")
+    if st.button("Add Holiday"):
+        st.session_state.holidays[new_holiday_date] = new_holiday_name
+
 with col2:
-    start_date = st.date_input("Semester Start Date")
-    end_date   = st.date_input("Semester End Date")
+    if st.session_state.holidays:
+        remove_date = st.selectbox("Remove holiday", list(st.session_state.holidays.keys()))
+        if st.button("Remove Selected Holiday"):
+            st.session_state.holidays.pop(remove_date, None)
 
-st.subheader("🏖 Add Holidays")
-holiday_text = st.text_area(
-    "Format: YYYY-MM-DD to YYYY-MM-DD (one per line)",
-    "2025-12-25 to 2026-01-02"
-)
+# ---------------------------
+# TIMETABLE IMAGE
+# ---------------------------
+st.header("📸 Upload Timetable Image")
+image_file = st.file_uploader("Upload timetable image", type=["png","jpg","jpeg"])
 
-# ------------------------------------------------------
-# PROCESS BUTTON
-# ------------------------------------------------------
-if st.button("📊 Calculate Total Classes") and image_file:
+if image_file:
+    with st.spinner("Analyzing timetable..."):
+        default_schedule = extract_schedule_from_image(image_file)
+    st.success("Timetable extracted successfully.")
+else:
+    default_schedule = {d: [] for d in ["Monday","Tuesday","Wednesday","Thursday","Friday"]}
 
-    text = extract_text(image_file)
-    schedule = parse_schedule(text)
+# ---------------------------
+# WEEKLY SCHEDULE EDITOR
+# ---------------------------
+st.header("🗓 Weekly Schedule")
+schedule = {}
+all_subjects = set()
 
-    working_days = generate_working_days(start_date, end_date)
+for day, subjects in default_schedule.items():
+    st.subheader(day)
+    num = st.number_input(f"Number of subjects on {day}", 0, 10, len(subjects), key=f"{day}_num")
+    schedule[day] = []
+    for i in range(num):
+        subj = st.text_input(f"{day} Subject {i+1}", subjects[i] if i < len(subjects) else "", key=f"{day}_{i}")
+        if subj.strip():
+            schedule[day].append(subj)
+            all_subjects.add(subj)
 
-    ranges = []
-    for line in holiday_text.splitlines():
-        if "to" in line:
-            s,e = line.split("to")
-            ranges.append((pd.to_datetime(s.strip()), pd.to_datetime(e.strip())))
+# ---------------------------
+# COMPLETED CLASSES
+# ---------------------------
+st.header("✔ Already Completed Classes")
+completed = {}
+for s in sorted(all_subjects):
+    completed[s] = st.number_input(s, min_value=0, value=0)
 
-    holidays = expand_holidays(ranges)
-    final_days = [d for d in working_days if d not in holidays]
+# ---------------------------
+# COUNT FUTURE CLASSES
+# ---------------------------
+future = {s:0 for s in all_subjects}
+current = start_date
 
-    counts = count_classes(final_days, schedule)
+while current <= end_date:
+    if current not in st.session_state.holidays:
+        day = current.strftime("%A")
+        if day in schedule:
+            for s in schedule[day]:
+                future[s] += 1
+    current += datetime.timedelta(days=1)
 
-    # ------------------------------------------------------
-    # OUTPUTS
-    # ------------------------------------------------------
-    st.subheader("📌 Weekly Schedule Detected")
-    st.write(schedule)
+# ---------------------------
+# FINAL SUMMARY
+# ---------------------------
+st.header("📊 Final Class Summary")
 
-    st.subheader("🗓 Total Working Days")
-    st.success(len(final_days))
+rows=[]
+for s in sorted(all_subjects):
+    rows.append({
+        "Subject": s,
+        "Completed": completed[s],
+        "Upcoming": future[s],
+        "Total": completed[s]+future[s]
+    })
 
-    st.subheader("📚 Total Classes Per Subject")
-    df = pd.DataFrame(counts.items(), columns=["Subject", "Total Classes"])
-    st.dataframe(df, use_container_width=True)
-
-    st.subheader("🚫 Excluded Holiday Dates")
-    st.write(sorted(list(holidays)))
+st.table(pd.DataFrame(rows))
