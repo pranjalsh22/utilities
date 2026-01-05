@@ -1,101 +1,133 @@
 import streamlit as st
 import datetime
+import holidays
 import pandas as pd
-import math
 
-st.set_page_config(page_title="Class Counter", layout="wide")
-st.title("Class Counter – B.Sc Physics (H) Sem VIII (2025–26)")
-st.write("by Pranjal")
+# ---------------------------
+# Fixed Dates
+# ---------------------------
+st.title("Class Counter")
+st.write("by pranjal")
 
-# Semester Dates
-default_start = datetime.date(2025, 12, 1)
-default_end   = datetime.date(2026, 3, 21)
+START_FIXED = datetime.date(2025, 12, 1)
+END_FIXED = datetime.date(2026, 3, 21)
 
-start_date = st.date_input("Semester Start Date", default_start)
-end_date   = st.date_input("Semester End Date", default_end)
+today = datetime.date.today()
 
-# Weekly Timetable Input
-st.header("Weekly Timetable")
+start_date = st.date_input("Start Date", START_FIXED, disabled=True)
+end_date = st.date_input("End Date", END_FIXED, disabled=True)
 
-default_timetable = """Monday: Optical Fiber and Communication, Digital Electronics and Microprocessors, Advanced Materials Physics, Advanced Materials Physics
-Tuesday: Digital Electronics and Microprocessors, Astronomical Techniques, Renewable Energy Economics, Astronomical Techniques, Astronomical Techniques
-Wednesday: Space and Planetary Science, Digital Electronics and Microprocessors, Renewable Energy Economics, Optical Fiber and Communication
-Thursday: Space and Planetary Science, Astronomical Techniques
-Friday: Astronomical Techniques, Space and Planetary Science, Optical Fiber and Communication, Advanced Materials Physics, Advanced Materials Physics
-"""
+# ---------------------------
+# Holidays (India + Extra Block)
+# ---------------------------
+holiday_list = holidays.India(years=range(start_date.year, end_date.year + 1))
+auto_holidays = {d: name for d, name in holiday_list.items() if start_date <= d <= end_date}
 
-timetable_text = st.text_area("Enter weekly timetable:", default_timetable, height=220)
+# Add extra holidays: 25 Dec 2025 – 4 Jan 2026
+extra_start = datetime.date(2025, 12, 25)
+extra_end = datetime.date(2026, 1, 4)
+current = extra_start
+while current <= extra_end:
+    auto_holidays[current] = "Winter Break"
+    current += datetime.timedelta(days=1)
 
-def parse_timetable(text):
-    schedule = {}
-    for line in text.splitlines():
-        if ":" in line:
-            day, rest = line.split(":", 1)
-            subs = [s.strip() for s in rest.split(",") if s.strip()]
-            schedule[day.strip()] = subs
-    return schedule
+if "holidays" not in st.session_state:
+    st.session_state.holidays = dict(auto_holidays)
 
-schedule = parse_timetable(timetable_text)
-subjects = set(s for subs in schedule.values() for s in subs)
+st.header("Manage Holidays")
 
-# Holidays Input
-st.header("Holidays (one date per line, YYYY-MM-DD)")
+if st.session_state.holidays:
+    holiday_df = pd.DataFrame(
+        [{"Date": d, "Holiday": name} for d, name in sorted(st.session_state.holidays.items())]
+    )
+    st.table(holiday_df)
 
-default_holidays = """2025-12-25
-2025-12-26
-2025-12-27
-2025-12-28
-2025-12-29
-2025-12-30
-2025-12-31
-2026-01-01
-2026-01-02
-2026-01-03
-2026-01-04
-2025-12-25
-2026-01-01
-2026-01-13
-2026-01-14
-2026-01-26
-2026-02-15
-2026-03-08
-2026-03-21
-"""
+# ---------------------------
+# Weekly Timetable (Your Data)
+# ---------------------------
+default_schedule = {
+    "Monday": [
+        "Optical Fiber and Communication",
+        "Digital Electronics and Microprocessors",
+        "Advanced Materials Physics",
+        "Advanced Materials Physics"
+    ],
+    "Tuesday": [
+        "Digital Electronics and Microprocessors",
+        "Astronomical Techniques",
+        "Renewable Energy Economics",
+        "Astronomical Techniques",
+        "Astronomical Techniques"
+    ],
+    "Wednesday": [
+        "Space and Planetary Science",
+        "Digital Electronics and Microprocessors",
+        "Renewable Energy Economics",
+        "Optical Fiber and Communication"
+    ],
+    "Thursday": [
+        "Space and Planetary Science",
+        "Astronomical Techniques"
+    ],
+    "Friday": [
+        "Astronomical Techniques",
+        "Space and Planetary Science",
+        "Optical Fiber and Communication",
+        "Advanced Materials Physics",
+        "Advanced Materials Physics"
+    ]
+}
 
-holiday_text = st.text_area("Enter all holidays:", default_holidays, height=180)
+schedule = default_schedule
+all_subjects = set()
+for subs in schedule.values():
+    all_subjects.update(subs)
 
-def parse_holidays(text):
-    days = set()
-    for line in text.splitlines():
-        try:
-            days.add(datetime.date.fromisoformat(line.strip()))
-        except:
-            pass
-    return days
+# ---------------------------
+# Weekly Table Display
+# ---------------------------
+st.subheader("Weekly Timetable")
+max_len = max(len(v) for v in schedule.values())
+weekly_df = pd.DataFrame({k: v + [""]*(max_len-len(v)) for k,v in schedule.items()})
+st.table(weekly_df)
 
-holidays_set = parse_holidays(holiday_text)
+# ---------------------------
+# Completed Classes Input
+# ---------------------------
+st.subheader("Enter Classes Already Completed")
+completed_classes = {}
+for subj in sorted(all_subjects):
+    completed_classes[subj] = st.number_input(subj, min_value=0, value=0)
 
+# ---------------------------
 # Count Classes
-counts = {s: 0 for s in subjects}
+# ---------------------------
+total_classes = {s:0 for s in all_subjects}
+should_have_completed = {s:0 for s in all_subjects}
+
 d = start_date
 while d <= end_date:
-    if d.weekday() < 5 and d not in holidays_set:
-        day = d.strftime("%A")
-        for s in schedule.get(day, []):
-            counts[s] += 1
+    if d not in st.session_state.holidays:
+        wd = d.strftime("%A")
+        if wd in schedule:
+            for s in schedule[wd]:
+                total_classes[s] += 1
+                if d <= today:
+                    should_have_completed[s] += 1
     d += datetime.timedelta(days=1)
 
-# Attendance Table
+# ---------------------------
+# Final Summary
+# ---------------------------
+st.subheader("Class Summary")
+
 rows = []
-for subject, total in counts.items():
+for s in sorted(all_subjects):
     rows.append({
-        "Subject": subject,
-        "95% Required": math.ceil(0.95 * total),
-        "90% Required": math.ceil(0.90 * total),
-        "85% Required": math.ceil(0.85 * total),
-        "80% Required": math.ceil(0.80 * total),
-        "75% Required": math.ceil(0.75 * total)
+        "Subject": s,
+        "Already Completed": completed_classes[s],
+        "Should Have Completed By Today": should_have_completed[s],
+        "Total Classes In Semester": total_classes[s]
     })
 
-st.header("Attendance Requirements")
-st.table(pd.DataFrame(rows).sort_values("Subject"))
+st.table(pd.DataFrame(rows))
