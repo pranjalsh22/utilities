@@ -4,7 +4,7 @@ import holidays
 import pandas as pd
 
 # ---------------------------
-# Fixed Dates
+# Fixed Semester Dates
 # ---------------------------
 st.title("Class Counter")
 st.write("by pranjal")
@@ -18,34 +18,28 @@ start_date = st.date_input("Start Date", START_FIXED, disabled=True)
 end_date = st.date_input("End Date", END_FIXED, disabled=True)
 
 # ---------------------------
-# Holidays (India + Extra Block)
+# Holidays (India + Winter Break)
 # ---------------------------
 holiday_list = holidays.India(years=range(start_date.year, end_date.year + 1))
 auto_holidays = {d: name for d, name in holiday_list.items() if start_date <= d <= end_date}
 
-# Add extra holidays: 25 Dec 2025 – 4 Jan 2026
-extra_start = datetime.date(2025, 12, 25)
-extra_end = datetime.date(2026, 1, 4)
-current = extra_start
-while current <= extra_end:
-    auto_holidays[current] = "Winter Break"
-    current += datetime.timedelta(days=1)
+# Winter Break: 25 Dec 2025 – 4 Jan 2026
+d = datetime.date(2025, 12, 25)
+while d <= datetime.date(2026, 1, 4):
+    auto_holidays[d] = "Winter Break"
+    d += datetime.timedelta(days=1)
 
 if "holidays" not in st.session_state:
     st.session_state.holidays = dict(auto_holidays)
 
 st.header("Manage Holidays")
-
-if st.session_state.holidays:
-    holiday_df = pd.DataFrame(
-        [{"Date": d, "Holiday": name} for d, name in sorted(st.session_state.holidays.items())]
-    )
-    st.table(holiday_df)
+holiday_df = pd.DataFrame([{"Date": d, "Holiday": n} for d,n in sorted(st.session_state.holidays.items())])
+st.table(holiday_df)
 
 # ---------------------------
-# Weekly Timetable (Your Data)
+# Weekly Timetable
 # ---------------------------
-default_schedule = {
+schedule = {
     "Monday": [
         "Optical Fiber and Communication",
         "Digital Electronics and Microprocessors",
@@ -78,26 +72,23 @@ default_schedule = {
     ]
 }
 
-schedule = default_schedule
 all_subjects = set()
 for subs in schedule.values():
     all_subjects.update(subs)
 
-# ---------------------------
-# Weekly Table Display
-# ---------------------------
+# Display timetable
 st.subheader("Weekly Timetable")
 max_len = max(len(v) for v in schedule.values())
 weekly_df = pd.DataFrame({k: v + [""]*(max_len-len(v)) for k,v in schedule.items()})
 st.table(weekly_df)
 
 # ---------------------------
-# Completed Classes Input
+# Weekly Count
 # ---------------------------
-st.subheader("Enter Classes Already Completed")
-completed_classes = {}
-for subj in sorted(all_subjects):
-    completed_classes[subj] = st.number_input(subj, min_value=0, value=0)
+weekly_count = {s: 0 for s in all_subjects}
+for subs in schedule.values():
+    for s in subs:
+        weekly_count[s] += 1
 
 # ---------------------------
 # Count Classes
@@ -123,11 +114,14 @@ st.subheader("Class Summary")
 
 rows = []
 for s in sorted(all_subjects):
+    required_total = weekly_count[s] * 15
+    extra_needed = required_total - total_classes[s]
+
     rows.append({
         "Subject": s,
-        "Already Completed": completed_classes[s],
         "Should Have Completed By Today": should_have_completed[s],
-        "Total Classes In Semester": total_classes[s]
+        "Total Classes In Semester": total_classes[s],
+        "Extra Classes Required": extra_needed
     })
 
 st.table(pd.DataFrame(rows))
