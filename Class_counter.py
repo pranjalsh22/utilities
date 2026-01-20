@@ -30,6 +30,8 @@ while d <= datetime.date(2026, 1, 4):
     d += datetime.timedelta(days=1)
 
 auto_holidays[datetime.date(2026, 1, 15)] = "Makarsakranti"
+auto_holidays[datetime.date(2026, 3, 4)] = "Holi"
+
 
 
 if "holidays" not in st.session_state:
