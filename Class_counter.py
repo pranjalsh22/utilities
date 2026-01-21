@@ -14,8 +14,8 @@ END_FIXED = datetime.date(2026, 3, 20)
 
 today = datetime.date.today()
 
-start_date = st.date_input("Start Date", START_FIXED, disabled=True)
-end_date = st.date_input("End Date", END_FIXED, disabled=True)
+start_date = st.date_input("Start Date", START_FIXED)
+end_date = st.date_input("End Date", END_FIXED)
 
 # ---------------------------
 # Holidays (India + Winter Break)
