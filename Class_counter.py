@@ -37,10 +37,19 @@ auto_holidays[datetime.date(2026, 3, 4)] = "Holi"
 if "holidays" not in st.session_state:
     st.session_state.holidays = dict(auto_holidays)
 
-st.header("Manage Holidays")
-holiday_df = pd.DataFrame([{"Date": d, "Holiday": n} for d,n in sorted(st.session_state.holidays.items())])
-st.table(holiday_df)
+#st.header("Manage Holidays")
+#holiday_df = pd.DataFrame([{"Date": d, "Holiday": n} for d,n in sorted(st.session_state.holidays.items())])
+#st.table(holiday_df)
+holiday_df = pd.DataFrame([
+    {
+        "Date": d,
+        "Day": d.strftime("%A"),
+        "Holiday": n
+    }
+    for d, n in sorted(st.session_state.holidays.items())
+])
 
+st.table(holiday_df)
 # ---------------------------
 # Weekly Timetable
 # ---------------------------
