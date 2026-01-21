@@ -10,7 +10,7 @@ st.title("Class Counter")
 st.write("by pranjal")
 
 START_FIXED = datetime.date(2025, 12, 1)
-END_FIXED = datetime.date(2026, 3, 21)
+END_FIXED = datetime.date(2026, 3, 20)
 
 today = datetime.date.today()
 
