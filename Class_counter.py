@@ -90,8 +90,7 @@ all_subjects = set()
 for subs in schedule.values():
     all_subjects.update(subs)
 
-# Display timetable
-st.subheader("Weekly Timetable")
+
 max_len = max(len(v) for v in schedule.values())
 weekly_df = pd.DataFrame({k: v + [""]*(max_len-len(v)) for k,v in schedule.items()})
 
@@ -124,7 +123,7 @@ while d <= end_date:
 # ---------------------------
 # Final Summary
 # ---------------------------
-st.subheader("Class Summary")
+
 
 rows = []
 for s in sorted(all_subjects):
@@ -137,7 +136,10 @@ for s in sorted(all_subjects):
         "Total Classes In Semester": total_classes[s],
         "Extra Classes Required": extra_needed
     })
-
+st.subheader("Class Summary")
 st.table(pd.DataFrame(rows))
+st.subheader("list of holidays")
 st.table(holiday_df)
+
+st.subheader("Weekly Timetable")
 st.table(weekly_df)
