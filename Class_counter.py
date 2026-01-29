@@ -49,7 +49,7 @@ holiday_df = pd.DataFrame([
     for d, n in sorted(st.session_state.holidays.items())
 ])
 
-st.table(holiday_df)
+
 # ---------------------------
 # Weekly Timetable
 # ---------------------------
@@ -94,7 +94,7 @@ for subs in schedule.values():
 st.subheader("Weekly Timetable")
 max_len = max(len(v) for v in schedule.values())
 weekly_df = pd.DataFrame({k: v + [""]*(max_len-len(v)) for k,v in schedule.items()})
-st.table(weekly_df)
+
 
 # ---------------------------
 # Weekly Count
@@ -139,3 +139,5 @@ for s in sorted(all_subjects):
     })
 
 st.table(pd.DataFrame(rows))
+st.table(holiday_df)
+st.table(weekly_df)
