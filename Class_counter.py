@@ -94,7 +94,19 @@ for subs in schedule.values():
 max_len = max(len(v) for v in schedule.values())
 weekly_df = pd.DataFrame({k: v + [""]*(max_len-len(v)) for k,v in schedule.items()})
 
+# ---------------------------
+# Extra Classes Already Taken (Sidebar Input)
+# ---------------------------
+st.sidebar.header("Extra Classes Already Taken")
 
+extra_taken = {}
+for s in sorted(all_subjects):
+    extra_taken[s] = st.sidebar.number_input(
+        f"{s}",
+        min_value=0,
+        step=1,
+        value=0
+    )
 # ---------------------------
 # Weekly Count
 # ---------------------------
@@ -106,8 +118,8 @@ for subs in schedule.values():
 # ---------------------------
 # Count Classes
 # ---------------------------
-total_classes = {s:0 for s in all_subjects}
-should_have_completed = {s:0 for s in all_subjects}
+total_classes = {s: 0 for s in all_subjects}
+should_have_completed = {s: 0 for s in all_subjects}
 
 d = start_date
 while d <= end_date:
@@ -120,6 +132,10 @@ while d <= end_date:
                     should_have_completed[s] += 1
     d += datetime.timedelta(days=1)
 
+# Add extra classes already taken
+for s in all_subjects:
+    total_classes[s] += extra_taken[s]
+    should_have_completed[s] += extra_taken[s]
 # ---------------------------
 # Final Summary
 # ---------------------------
