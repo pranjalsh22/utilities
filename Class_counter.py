@@ -85,7 +85,7 @@ max_len = max(len(v) for v in schedule.values())
 weekly_df = pd.DataFrame({k: v + [""]*(max_len-len(v)) for k,v in schedule.items()})
 
 # ---------------------------
-# Weekly Count (how many times per week each subject occurs)
+# Weekly Count
 # ---------------------------
 weekly_count = {s: 0 for s in all_subjects}
 for subs in schedule.values():
@@ -104,7 +104,6 @@ DEFAULT_EXTRA_CLASSES = {
     "Space and Planetary Science": 0,
 }
 
-# Initialize session state
 if "extra_taken" not in st.session_state:
     st.session_state.extra_taken = DEFAULT_EXTRA_CLASSES.copy()
 
@@ -125,9 +124,10 @@ for s in sorted(all_subjects):
     st.session_state.extra_taken[s] = extra_taken[s]
 
 # ---------------------------
-# Count Classes (till today only)
+# Count timetable-based classes
 # ---------------------------
-should_have_completed = {s: 0 for s in all_subjects}
+# Till today
+till_today = {s: 0 for s in all_subjects}
 
 d = start_date
 while d <= end_date and d <= today:
@@ -135,16 +135,29 @@ while d <= end_date and d <= today:
         wd = d.strftime("%A")
         if wd in schedule:
             for s in schedule[wd]:
-                should_have_completed[s] += 1
+                till_today[s] += 1
     d += datetime.timedelta(days=1)
 
-# Add extra classes already taken
-for s in all_subjects:
-    should_have_completed[s] += extra_taken[s]
+# Full semester
+full_semester = {s: 0 for s in all_subjects}
 
-# As per your rule:
-# Total Classes In Semester = should_have_completed (incl. extra)
-total_classes = should_have_completed.copy()
+d = start_date
+while d <= end_date:
+    if d not in st.session_state.holidays:
+        wd = d.strftime("%A")
+        if wd in schedule:
+            for s in schedule[wd]:
+                full_semester[s] += 1
+    d += datetime.timedelta(days=1)
+
+# ---------------------------
+# Apply your rules
+# ---------------------------
+# Classes should have been completed till today = timetable till today + extra taken
+should_have_completed = {s: till_today[s] + extra_taken[s] for s in all_subjects}
+
+# Total classes in semester = timetable full semester + extra taken
+total_classes = {s: full_semester[s] + extra_taken[s] for s in all_subjects}
 
 # ---------------------------
 # Final Summary
@@ -153,7 +166,6 @@ rows = []
 for s in sorted(all_subjects):
     total_sem = total_classes[s]
 
-    # Original requirement logic
     required_total = weekly_count[s] * 15
     extra_needed = required_total - total_sem
 
@@ -163,7 +175,7 @@ for s in sorted(all_subjects):
 
     rows.append({
         "Subject": s,
-        "Classes Should Have Completed (Incl. Extra)": should_have_completed[s],
+        "Classes Should Have Completed Till Today": should_have_completed[s],
         "Total Classes In Semester": total_sem,
         "Extra Classes Required": extra_needed,
         "Classes Needed for 90%": need_90,
