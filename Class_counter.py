@@ -145,6 +145,10 @@ rows = []
 for s in sorted(all_subjects):
     total_sem = total_classes[s]
 
+    # Original requirement logic
+    required_total = weekly_count[s] * 15
+    extra_needed = required_total - total_sem
+
     need_90 = math.ceil(0.90 * total_sem)
     need_85 = math.ceil(0.85 * total_sem)
     need_80 = math.ceil(0.80 * total_sem)
@@ -153,6 +157,7 @@ for s in sorted(all_subjects):
         "Subject": s,
         "Classes Should Have Completed (Incl. Extra)": should_have_completed[s],
         "Total Classes In Semester": total_sem,
+        "Extra Classes Required": extra_needed,
         "Classes Needed for 90%": need_90,
         "Classes Needed for 85%": need_85,
         "Classes Needed for 80%": need_80,
@@ -160,7 +165,6 @@ for s in sorted(all_subjects):
 
 st.subheader("Class Summary")
 st.table(pd.DataFrame(rows))
-
 st.subheader("List of Holidays")
 st.table(holiday_df)
 
