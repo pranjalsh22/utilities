@@ -32,14 +32,9 @@ while d <= datetime.date(2026, 1, 4):
 auto_holidays[datetime.date(2026, 1, 15)] = "Makarsakranti"
 auto_holidays[datetime.date(2026, 3, 4)] = "Holi"
 
-
-
 if "holidays" not in st.session_state:
     st.session_state.holidays = dict(auto_holidays)
 
-#st.header("Manage Holidays")
-#holiday_df = pd.DataFrame([{"Date": d, "Holiday": n} for d,n in sorted(st.session_state.holidays.items())])
-#st.table(holiday_df)
 holiday_df = pd.DataFrame([
     {
         "Date": d,
@@ -48,7 +43,6 @@ holiday_df = pd.DataFrame([
     }
     for d, n in sorted(st.session_state.holidays.items())
 ])
-
 
 # ---------------------------
 # Weekly Timetable
@@ -90,23 +84,9 @@ all_subjects = set()
 for subs in schedule.values():
     all_subjects.update(subs)
 
-
 max_len = max(len(v) for v in schedule.values())
 weekly_df = pd.DataFrame({k: v + [""]*(max_len-len(v)) for k,v in schedule.items()})
 
-# ---------------------------
-# Extra Classes Already Taken (Sidebar Input)
-# ---------------------------
-st.sidebar.header("Extra Classes Already Taken")
-
-extra_taken = {}
-for s in sorted(all_subjects):
-    extra_taken[s] = st.sidebar.number_input(
-        f"{s}",
-        min_value=0,
-        step=1,
-        value=0
-    )
 # ---------------------------
 # Weekly Count
 # ---------------------------
@@ -114,6 +94,42 @@ weekly_count = {s: 0 for s in all_subjects}
 for subs in schedule.values():
     for s in subs:
         weekly_count[s] += 1
+
+# ---------------------------
+# Default Extra Classes (EDIT THESE)
+# ---------------------------
+DEFAULT_EXTRA_CLASSES = {
+    "Optical Fiber and Communication": 0,
+    "Digital Electronics and Microprocessors": 0,
+    "Advanced Materials Physics": 0,
+    "Astronomical Techniques": 0,
+    "Renewable Energy Economics": 0,
+    "Space and Planetary Science": 0,
+}
+
+# Initialize session state
+if "extra_taken" not in st.session_state:
+    st.session_state.extra_taken = DEFAULT_EXTRA_CLASSES.copy()
+
+# ---------------------------
+# Sidebar: Extra Classes Input
+# ---------------------------
+st.sidebar.header("Extra Classes Already Taken")
+
+if st.sidebar.button("Reset to Defaults"):
+    st.session_state.extra_taken = DEFAULT_EXTRA_CLASSES.copy()
+
+extra_taken = {}
+
+for s in sorted(all_subjects):
+    extra_taken[s] = st.sidebar.number_input(
+        f"{s}",
+        min_value=0,
+        step=1,
+        value=st.session_state.extra_taken.get(s, 0),
+        key=f"extra_{s}"
+    )
+    st.session_state.extra_taken[s] = extra_taken[s]
 
 # ---------------------------
 # Count Classes
@@ -136,11 +152,10 @@ while d <= end_date:
 for s in all_subjects:
     total_classes[s] += extra_taken[s]
     should_have_completed[s] += extra_taken[s]
+
 # ---------------------------
 # Final Summary
 # ---------------------------
-
-
 rows = []
 for s in sorted(all_subjects):
     required_total = weekly_count[s] * 15
@@ -152,9 +167,11 @@ for s in sorted(all_subjects):
         "Total Classes In Semester": total_classes[s],
         "Extra Classes Required": extra_needed
     })
+
 st.subheader("Class Summary")
 st.table(pd.DataFrame(rows))
-st.subheader("list of holidays")
+
+st.subheader("List of Holidays")
 st.table(holiday_df)
 
 st.subheader("Weekly Timetable")
