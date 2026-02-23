@@ -178,9 +178,9 @@ for s in sorted(all_subjects):
         "Classes Should Have Completed Till Today": should_have_completed[s],
         "Total Classes In Semester": total_sem,
         "Extra Classes Required": extra_needed,
-        "Classes Needed for 90%": need_90,
-        "Classes Needed for 85%": need_85,
-        "Classes Needed for 80%": need_80,
+        "Absents for 90%": need_90,
+        "Absents for 85%": need_85,
+        "Absents for 80%": need_80,
     })
 
 st.subheader("Class Summary")
