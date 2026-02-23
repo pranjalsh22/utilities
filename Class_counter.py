@@ -85,14 +85,6 @@ max_len = max(len(v) for v in schedule.values())
 weekly_df = pd.DataFrame({k: v + [""]*(max_len-len(v)) for k,v in schedule.items()})
 
 # ---------------------------
-# Weekly Count
-# ---------------------------
-weekly_count = {s: 0 for s in all_subjects}
-for subs in schedule.values():
-    for s in subs:
-        weekly_count[s] += 1
-
-# ---------------------------
 # Default Extra Classes (EDIT THESE)
 # ---------------------------
 DEFAULT_EXTRA_CLASSES = {
@@ -125,58 +117,45 @@ for s in sorted(all_subjects):
     st.session_state.extra_taken[s] = extra_taken[s]
 
 # ---------------------------
-# Count Classes
+# Count Classes (till today only)
 # ---------------------------
-total_classes = {s: 0 for s in all_subjects}
 should_have_completed = {s: 0 for s in all_subjects}
 
 d = start_date
-while d <= end_date:
+while d <= end_date and d <= today:
     if d not in st.session_state.holidays:
         wd = d.strftime("%A")
         if wd in schedule:
             for s in schedule[wd]:
-                total_classes[s] += 1
-                if d <= today:
-                    should_have_completed[s] += 1
+                should_have_completed[s] += 1
     d += datetime.timedelta(days=1)
 
 # Add extra classes already taken
 for s in all_subjects:
-    total_classes[s] += extra_taken[s]
     should_have_completed[s] += extra_taken[s]
 
-# ---------------------------
-# Helper: classes needed for target %
-# ---------------------------
-def classes_needed_for_target(attended, total, target):
-    required = math.ceil(target * total)
-    need = required - attended
-    return max(0, need)
+# As per your rule:
+# Total Classes In Semester = should_have_completed + extra (already included above)
+total_classes = should_have_completed.copy()
 
 # ---------------------------
 # Final Summary
 # ---------------------------
 rows = []
 for s in sorted(all_subjects):
-    required_total = weekly_count[s] * 15
-    extra_needed = required_total - total_classes[s]
-
-    attended_so_far = should_have_completed[s]
     total_sem = total_classes[s]
 
-    need_90 = classes_needed_for_target(attended_so_far, total_sem, 0.90)
-    need_85 = classes_needed_for_target(attended_so_far, total_sem, 0.85)
-    need_80 = classes_needed_for_target(attended_so_far, total_sem, 0.80)
+    need_90 = math.ceil(0.90 * total_sem)
+    need_85 = math.ceil(0.85 * total_sem)
+    need_80 = math.ceil(0.80 * total_sem)
 
     rows.append({
         "Subject": s,
-        "Should Have Completed By Today": attended_so_far,
+        "Classes Should Have Completed (Incl. Extra)": should_have_completed[s],
         "Total Classes In Semester": total_sem,
-        "Extra Classes Required": extra_needed,
-        "Classes to Attend for 90%": need_90,
-        "Classes to Attend for 85%": need_85,
-        "Classes to Attend for 80%": need_80,
+        "Classes Needed for 90%": need_90,
+        "Classes Needed for 85%": need_85,
+        "Classes Needed for 80%": need_80,
     })
 
 st.subheader("Class Summary")
