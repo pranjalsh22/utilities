@@ -169,9 +169,9 @@ for s in sorted(all_subjects):
     required_total = weekly_count[s] * 15
     extra_needed = required_total - total_sem
 
-    need_90 = math.ceil(0.90 * total_sem)
-    need_85 = math.ceil(0.85 * total_sem)
-    need_80 = math.ceil(0.80 * total_sem)
+    need_90 = total_sem- math.ceil(0.90 * total_sem)
+    need_85 = total_sem- math.ceil(0.85 * total_sem)
+    need_80 = total_sem- math.ceil(0.80 * total_sem)
 
     rows.append({
         "Subject": s,
