@@ -85,6 +85,14 @@ max_len = max(len(v) for v in schedule.values())
 weekly_df = pd.DataFrame({k: v + [""]*(max_len-len(v)) for k,v in schedule.items()})
 
 # ---------------------------
+# Weekly Count (how many times per week each subject occurs)
+# ---------------------------
+weekly_count = {s: 0 for s in all_subjects}
+for subs in schedule.values():
+    for s in subs:
+        weekly_count[s] += 1
+
+# ---------------------------
 # Default Extra Classes (EDIT THESE)
 # ---------------------------
 DEFAULT_EXTRA_CLASSES = {
@@ -135,7 +143,7 @@ for s in all_subjects:
     should_have_completed[s] += extra_taken[s]
 
 # As per your rule:
-# Total Classes In Semester = should_have_completed + extra (already included above)
+# Total Classes In Semester = should_have_completed (incl. extra)
 total_classes = should_have_completed.copy()
 
 # ---------------------------
@@ -165,6 +173,7 @@ for s in sorted(all_subjects):
 
 st.subheader("Class Summary")
 st.table(pd.DataFrame(rows))
+
 st.subheader("List of Holidays")
 st.table(holiday_df)
 
