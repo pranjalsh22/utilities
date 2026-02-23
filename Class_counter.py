@@ -99,9 +99,9 @@ DEFAULT_EXTRA_CLASSES = {
     "Optical Fiber and Communication": 0,
     "Digital Electronics and Microprocessors": 0,
     "Advanced Materials Physics": 0,
-    "Astronomical Techniques": 0,
-    "Renewable Energy Economics": 0,
-    "Space and Planetary Science": 0,
+    "Astronomical Techniques": 5,
+    "Renewable Energy Economics": 3,
+    "Space and Planetary Science": 2,
 }
 
 if "extra_taken" not in st.session_state:
