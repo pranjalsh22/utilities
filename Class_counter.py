@@ -2,6 +2,7 @@ import streamlit as st
 import datetime
 import holidays
 import pandas as pd
+import math
 
 # ---------------------------
 # Fixed Semester Dates
@@ -36,11 +37,7 @@ if "holidays" not in st.session_state:
     st.session_state.holidays = dict(auto_holidays)
 
 holiday_df = pd.DataFrame([
-    {
-        "Date": d,
-        "Day": d.strftime("%A"),
-        "Holiday": n
-    }
+    {"Date": d, "Day": d.strftime("%A"), "Holiday": n}
     for d, n in sorted(st.session_state.holidays.items())
 ])
 
@@ -116,11 +113,7 @@ if "extra_taken" not in st.session_state:
 # ---------------------------
 st.sidebar.header("Extra Classes Already Taken")
 
-if st.sidebar.button("Reset to Defaults"):
-    st.session_state.extra_taken = DEFAULT_EXTRA_CLASSES.copy()
-
 extra_taken = {}
-
 for s in sorted(all_subjects):
     extra_taken[s] = st.sidebar.number_input(
         f"{s}",
@@ -154,6 +147,14 @@ for s in all_subjects:
     should_have_completed[s] += extra_taken[s]
 
 # ---------------------------
+# Helper: classes needed for target %
+# ---------------------------
+def classes_needed_for_target(attended, total, target):
+    required = math.ceil(target * total)
+    need = required - attended
+    return max(0, need)
+
+# ---------------------------
 # Final Summary
 # ---------------------------
 rows = []
@@ -161,11 +162,21 @@ for s in sorted(all_subjects):
     required_total = weekly_count[s] * 15
     extra_needed = required_total - total_classes[s]
 
+    attended_so_far = should_have_completed[s]
+    total_sem = total_classes[s]
+
+    need_90 = classes_needed_for_target(attended_so_far, total_sem, 0.90)
+    need_85 = classes_needed_for_target(attended_so_far, total_sem, 0.85)
+    need_80 = classes_needed_for_target(attended_so_far, total_sem, 0.80)
+
     rows.append({
         "Subject": s,
-        "Should Have Completed By Today": should_have_completed[s],
-        "Total Classes In Semester": total_classes[s],
-        "Extra Classes Required": extra_needed
+        "Should Have Completed By Today": attended_so_far,
+        "Total Classes In Semester": total_sem,
+        "Extra Classes Required": extra_needed,
+        "Classes to Attend for 90%": need_90,
+        "Classes to Attend for 85%": need_85,
+        "Classes to Attend for 80%": need_80,
     })
 
 st.subheader("Class Summary")
