@@ -37,26 +37,110 @@ Then interpolates and combines all spectra.
 
 def load_spectrum(uploaded_file):
 
-    try:
+    filename = uploaded_file.name.lower()
+
+    ext = os.path.splitext(filename)[1]
+
+    # ======================================================
+    # CSV
+    # ======================================================
+
+    if ext == ".csv":
+
         df = pd.read_csv(uploaded_file)
 
-    except:
+    # ======================================================
+    # TSV
+    # ======================================================
+
+    elif ext == ".tsv":
+
+        df = pd.read_csv(
+            uploaded_file,
+            sep="\t"
+        )
+
+    # ======================================================
+    # TXT / DAT / ASCII
+    # ======================================================
+
+    elif ext in [
+        ".txt",
+        ".dat",
+        ".ascii"
+    ]:
+
         df = pd.read_csv(
             uploaded_file,
             delim_whitespace=True,
+            comment="#",
             header=None
         )
 
-    if len(df.columns) < 2:
-        st.error(f"{uploaded_file.name} must have 2 columns")
-        return None, None
+    # ======================================================
+    # ECSV
+    # ======================================================
 
+    elif ext == ".ecsv":
+
+        table = Table.read(
+            uploaded_file,
+            format="ascii.ecsv"
+        )
+
+        df = table.to_pandas()
+
+    # ======================================================
+    # FITS
+    # ======================================================
+
+    elif ext in [
+        ".fits",
+        ".fit",
+        ".fts"
+    ]:
+
+        hdul = fits.open(uploaded_file)
+
+        data = hdul[1].data
+
+        df = pd.DataFrame(data)
+
+        hdul.close()
+
+    # ======================================================
+    # XLSX
+    # ======================================================
+
+    elif ext == ".xlsx":
+
+        df = pd.read_excel(uploaded_file)
+
+    # ======================================================
+    # UNKNOWN
+    # ======================================================
+
+    else:
+
+        raise ValueError(
+            f"Unsupported file type: {ext}"
+        )
+
+    # ======================================================
+    # VALIDATE
+    # ======================================================
+
+    if len(df.columns) < 2:
+
+        raise ValueError(
+            "Spectrum must contain at least 2 columns"
+        )
+
+    # use first 2 columns
     x = np.array(df.iloc[:, 0], dtype=float)
     y = np.array(df.iloc[:, 1], dtype=float)
 
     return x, y
-
-
 # ============================================================
 # X CONVERSION
 # ============================================================
