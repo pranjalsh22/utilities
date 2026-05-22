@@ -42,6 +42,10 @@ The app:
 # SPECTRAL REGIONS
 # ============================================================
 
+# ============================================================
+# SPECTRAL REGIONS
+# ============================================================
+
 def add_spectral_regions(fig):
 
     spectral_regions = [
@@ -50,63 +54,66 @@ def add_spectral_regions(fig):
             "name": "Radio",
             "x0": 1e6,
             "x1": 3e11,
-            "color": "rgba(0, 100, 255, 0.5)"
+            "color": "rgba(0, 100, 255, 0.20)"
         },
 
         {
             "name": "Microwave",
             "x0": 3e11,
             "x1": 3e12,
-            "color": "rgba(0, 255, 255, 1)"
+            "color": "rgba(0, 255, 255, 0.20)"
         },
 
         {
             "name": "Infrared",
             "x0": 3e12,
             "x1": 4e14,
-            "color": "rgba(255, 140, 0, 1)"
+            "color": "rgba(255, 140, 0, 0.20)"
         },
 
         {
             "name": "Optical",
             "x0": 4e14,
             "x1": 7.5e14,
-            "color": "rgba(255, 255, 0, 1)"
+            "color": "rgba(255, 255, 0, 0.20)"
         },
 
         {
             "name": "Ultraviolet",
             "x0": 7.5e14,
             "x1": 3e16,
-            "color": "rgba(180, 0, 255, 1)"
+            "color": "rgba(180, 0, 255, 0.20)"
         },
 
         {
             "name": "X-ray",
             "x0": 3e16,
             "x1": 3e19,
-            "color": "rgba(255, 0, 0, 1)"
+            "color": "rgba(255, 0, 0, 0.20)"
         },
 
         {
             "name": "Gamma-ray",
             "x0": 3e19,
             "x1": 1e25,
-            "color": "rgba(100, 100, 100, 1)"
+            "color": "rgba(100, 100, 100, 0.20)"
         }
     ]
 
     for region in spectral_regions:
 
         fig.add_vrect(
+
             x0=region["x0"],
             x1=region["x1"],
 
             fillcolor=region["color"],
 
-            opacity=1,
+            opacity=0.5,
 
             line_width=0,
+
+            layer="below",
 
             annotation_text=region["name"],
 
@@ -119,7 +126,6 @@ def add_spectral_regions(fig):
         )
 
     return fig
-
 
 # ============================================================
 # LOAD SPECTRUM
