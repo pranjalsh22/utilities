@@ -313,12 +313,62 @@ if uploaded_files:
             key=f"x_type_{i}"
         )
 
-        x_unit = st.sidebar.text_input(
-            f"X-axis Unit ({uploaded_file.name})",
-            value="Hz",
-            key=f"x_unit_{i}"
-        )
-
+    
+        # ======================================================
+        # UNIT OPTIONS
+        # ======================================================
+        
+        frequency_units = [
+            "Hz",
+            "kHz",
+            "MHz",
+            "GHz",
+            "THz"
+        ]
+        
+        wavelength_units = [
+            "Angstrom",
+            "nm",
+            "um",
+            "mm",
+            "cm",
+            "m"
+        ]
+        
+        energy_units = [
+            "eV",
+            "keV",
+            "MeV",
+            "GeV"
+        ]
+        
+        # ======================================================
+        # UNIT SELECTOR
+        # ======================================================
+        
+        if x_type == "Frequency":
+        
+            x_unit = st.sidebar.selectbox(
+                f"Frequency Unit ({uploaded_file.name})",
+                frequency_units,
+                key=f"x_unit_{i}"
+            )
+        
+        elif x_type == "Wavelength":
+        
+            x_unit = st.sidebar.selectbox(
+                f"Wavelength Unit ({uploaded_file.name})",
+                wavelength_units,
+                key=f"x_unit_{i}"
+            )
+        
+        elif x_type == "Energy":
+        
+            x_unit = st.sidebar.selectbox(
+                f"Energy Unit ({uploaded_file.name})",
+                energy_units,
+                key=f"x_unit_{i}"
+            )
         y_type = st.sidebar.selectbox(
             f"Y-axis Type ({uploaded_file.name})",
             ["F_nu", "nuF_nu", "F_lambda", "lambdaF_lambda"],
