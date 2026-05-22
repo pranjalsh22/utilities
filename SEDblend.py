@@ -14,11 +14,11 @@ from astropy.io import fits
 # ============================================================
 
 st.set_page_config(
-    page_title="Multi-Spectrum Combiner",
+    page_title="SEDBlend",
     layout="wide"
 )
 
-st.title("Multi-Spectrum Frequency Combiner")
+st.title("SEDBlend")
 
 st.markdown("""
 Upload multiple spectra in frequency space.
@@ -116,7 +116,8 @@ Reason:
     # SHOW DETECTED COLUMNS
     # ========================================================
 
-    st.write(f"Detected columns in {uploaded_file.name}")
+    st.subheader(f"Detected Columns: {uploaded_file.name}")
+
     st.dataframe(df.head())
 
     # ========================================================
@@ -189,7 +190,6 @@ Reason:
 
 # ============================================================
 # X CONVERSION
-# Frequency only
 # ============================================================
 
 def convert_x_to_frequency(x, unit):
@@ -203,9 +203,6 @@ def convert_x_to_frequency(x, unit):
 
 # ============================================================
 # Y CONVERSION
-# Only:
-# F_nu
-# nuF_nu
 # ============================================================
 
 def convert_y_to_fnu(nu, y, ytype):
@@ -474,7 +471,11 @@ if uploaded_files:
                     x=spectrum["nu"],
                     y=spectrum["fnu"],
                     mode='lines+markers',
-                    name=spectrum["name"]
+                    name=spectrum["name"],
+
+                    hovertemplate=
+                    "Frequency: %{x:.3e} Hz<br>" +
+                    "Flux: %{y:.3e}<extra></extra>"
                 )
             )
 
@@ -484,7 +485,9 @@ if uploaded_files:
             yaxis_title="F_nu",
             xaxis_type="log",
             yaxis_type="log",
-            height=700
+            height=700,
+            hovermode="x unified",
+            template="plotly_dark"
         )
 
         st.plotly_chart(
@@ -509,7 +512,11 @@ if uploaded_files:
                     x=common_nu[mask],
                     y=interp_spec["flux"][mask],
                     mode='lines',
-                    name=interp_spec["name"]
+                    name=interp_spec["name"],
+
+                    hovertemplate=
+                    "Frequency: %{x:.3e} Hz<br>" +
+                    "Flux: %{y:.3e}<extra></extra>"
                 )
             )
 
@@ -519,7 +526,9 @@ if uploaded_files:
             yaxis_title="F_nu",
             xaxis_type="log",
             yaxis_type="log",
-            height=700
+            height=700,
+            hovermode="x unified",
+            template="plotly_dark"
         )
 
         st.plotly_chart(
@@ -546,7 +555,11 @@ if uploaded_files:
                     y=interp_spec["flux"][mask],
                     mode='lines',
                     opacity=0.4,
-                    name=interp_spec["name"]
+                    name=interp_spec["name"],
+
+                    hovertemplate=
+                    "Frequency: %{x:.3e} Hz<br>" +
+                    "Flux: %{y:.3e}<extra></extra>"
                 )
             )
 
@@ -557,7 +570,11 @@ if uploaded_files:
                 y=total_fnu,
                 mode='lines',
                 line=dict(width=4),
-                name='TOTAL'
+                name='TOTAL',
+
+                hovertemplate=
+                "Frequency: %{x:.3e} Hz<br>" +
+                "Flux: %{y:.3e}<extra></extra>"
             )
         )
 
@@ -567,7 +584,9 @@ if uploaded_files:
             yaxis_title="F_nu",
             xaxis_type="log",
             yaxis_type="log",
-            height=700
+            height=700,
+            hovermode="x unified",
+            template="plotly_dark"
         )
 
         st.plotly_chart(
@@ -584,7 +603,7 @@ if uploaded_files:
         "Fnu_Total": total_fnu
     })
 
-    # add individual spectra
+    # individual spectra
     for interp_spec in interpolated_spectra:
 
         output_df[
