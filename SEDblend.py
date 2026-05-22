@@ -72,12 +72,12 @@ def load_spectrum(uploaded_file):
 
         df = pd.read_csv(
             uploaded_file,
-            delim_whitespace=True,
+            sep=r"\s+",
             comment="#",
-            header=None
+            header=None,
+            engine="python"
         )
-
-    # ======================================================
+            # ======================================================
     # ECSV
     # ======================================================
 
