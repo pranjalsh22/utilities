@@ -54,49 +54,49 @@ def add_spectral_regions(fig):
             "name": "Radio",
             "x0": 1e6,
             "x1": 3e11,
-            "color": "rgba(0, 100, 255, 0.20)"
+            "color": "rgba(0, 100, 255, 0.50)"
         },
 
         {
             "name": "Microwave",
             "x0": 3e11,
             "x1": 3e12,
-            "color": "rgba(0, 255, 255, 0.20)"
+            "color": "rgba(0, 255, 255, 0.50)"
         },
 
         {
             "name": "Infrared",
             "x0": 3e12,
             "x1": 4e14,
-            "color": "rgba(255, 140, 0, 0.20)"
+            "color": "rgba(255, 140, 0, 0.50)"
         },
 
         {
             "name": "Optical",
             "x0": 4e14,
             "x1": 7.5e14,
-            "color": "rgba(255, 255, 0, 0.20)"
+            "color": "rgba(255, 255, 0, 0.50)"
         },
 
         {
             "name": "Ultraviolet",
             "x0": 7.5e14,
             "x1": 3e16,
-            "color": "rgba(180, 0, 255, 0.20)"
+            "color": "rgba(180, 0, 255, 0.50)"
         },
 
         {
             "name": "X-ray",
             "x0": 3e16,
             "x1": 3e19,
-            "color": "rgba(255, 0, 0, 0.20)"
+            "color": "rgba(255, 0, 0, 0.50)"
         },
 
         {
             "name": "Gamma-ray",
             "x0": 3e19,
             "x1": 1e25,
-            "color": "rgba(100, 100, 100, 0.20)"
+            "color": "rgba(100, 100, 100, 0.50)"
         }
     ]
 
