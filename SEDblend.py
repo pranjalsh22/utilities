@@ -50,49 +50,49 @@ def add_spectral_regions(fig):
             "name": "Radio",
             "x0": 1e6,
             "x1": 3e11,
-            "color": "rgba(0, 100, 255, 0.35)"
+            "color": "rgba(0, 100, 255, 0.20)"
         },
 
         {
             "name": "Microwave",
             "x0": 3e11,
             "x1": 3e12,
-            "color": "rgba(0, 255, 255, 0.30)"
+            "color": "rgba(0, 255, 255, 0.18)"
         },
 
         {
             "name": "Infrared",
             "x0": 3e12,
             "x1": 4e14,
-            "color": "rgba(255, 140, 0, 0.30)"
+            "color": "rgba(255, 140, 0, 0.18)"
         },
 
         {
             "name": "Optical",
             "x0": 4e14,
             "x1": 7.5e14,
-            "color": "rgba(255, 255, 0, 0.35)"
+            "color": "rgba(255, 255, 0, 0.22)"
         },
 
         {
             "name": "Ultraviolet",
             "x0": 7.5e14,
             "x1": 3e16,
-            "color": "rgba(180, 0, 255, 0.30)"
+            "color": "rgba(180, 0, 255, 0.18)"
         },
 
         {
             "name": "X-ray",
             "x0": 3e16,
             "x1": 3e19,
-            "color": "rgba(255, 0, 0, 0.30)"
+            "color": "rgba(255, 0, 0, 0.18)"
         },
 
         {
             "name": "Gamma-ray",
             "x0": 3e19,
             "x1": 1e25,
-            "color": "rgba(255, 255, 255, 0.18)"
+            "color": "rgba(100, 100, 100, 0.15)"
         }
     ]
 
@@ -104,7 +104,7 @@ def add_spectral_regions(fig):
 
             fillcolor=region["color"],
 
-            opacity=0.55,
+            opacity=0.45,
 
             line_width=0,
 
@@ -113,8 +113,8 @@ def add_spectral_regions(fig):
             annotation_position="top left",
 
             annotation=dict(
-                font_size=13,
-                font_color="white"
+                font_size=12,
+                font_color="black"
             )
         )
 
@@ -540,7 +540,7 @@ if uploaded_files:
     }
 
     # ========================================================
-    # COMMON LAYOUT FUNCTION
+    # COMMON LAYOUT
     # ========================================================
 
     def apply_layout(fig, title):
@@ -557,15 +557,18 @@ if uploaded_files:
 
             hovermode="x unified",
 
-            template="plotly_dark",
+            template="plotly_white",
 
-            paper_bgcolor="black",
-            plot_bgcolor="black",
+            paper_bgcolor="white",
+            plot_bgcolor="white",
 
-            font=dict(size=16),
+            font=dict(
+                size=16,
+                color="black"
+            ),
 
             legend=dict(
-                bgcolor="rgba(0,0,0,0)",
+                bgcolor="rgba(255,255,255,0.7)",
                 borderwidth=0
             ),
 
@@ -582,7 +585,7 @@ if uploaded_files:
 
                 showgrid=True,
 
-                gridcolor="rgba(255,255,255,0.08)",
+                gridcolor="rgba(0,0,0,0.12)",
 
                 tickformat=".0e",
 
@@ -595,7 +598,7 @@ if uploaded_files:
 
                 showgrid=True,
 
-                gridcolor="rgba(255,255,255,0.08)",
+                gridcolor="rgba(0,0,0,0.12)",
 
                 tickformat=".0e",
 
