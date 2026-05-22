@@ -3,11 +3,9 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import os
+
 from scipy.interpolate import interp1d
 from astropy import units as u
-from astropy.constants import c
-
-
 from astropy.table import Table
 from astropy.io import fits
 
@@ -20,19 +18,24 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("Astrophysical Multi-Spectrum Combiner")
+st.title("Multi-Spectrum Frequency Combiner")
 
 st.markdown("""
-Upload multiple spectra with different:
-- x-axis grids,
-- x-axis units,
-- y-axis definitions.
+Upload multiple spectra in frequency space.
 
-The app converts everything internally to:
-- Frequency (Hz)
-- F_nu
+Supported:
+- Frequency units:
+  Hz, kHz, MHz, GHz, THz
 
-Then interpolates and combines all spectra.
+- Flux formats:
+  F_nu
+  nuF_nu
+
+The app:
+- converts all spectra to F_nu,
+- interpolates onto a common frequency grid,
+- combines all spectra,
+- plots the total spectrum.
 """)
 
 # ============================================================
@@ -45,9 +48,9 @@ def load_spectrum(uploaded_file):
 
     ext = os.path.splitext(filename)[1]
 
-    # ======================================================
-    # FITS
-    # ======================================================
+    # ========================================================
+    # FITS FILES
+    # ========================================================
 
     if ext in [".fits", ".fit", ".fts"]:
 
@@ -59,17 +62,17 @@ def load_spectrum(uploaded_file):
 
         hdul.close()
 
-    # ======================================================
-    # XLSX
-    # ======================================================
+    # ========================================================
+    # EXCEL FILES
+    # ========================================================
 
     elif ext == ".xlsx":
 
         df = pd.read_excel(uploaded_file)
 
-    # ======================================================
+    # ========================================================
     # TEXT-BASED FILES
-    # ======================================================
+    # ========================================================
 
     else:
 
@@ -77,7 +80,6 @@ def load_spectrum(uploaded_file):
 
         try:
 
-            # Astropy auto-detects format
             table = Table.read(
                 uploaded_file,
                 format="ascii"
@@ -98,9 +100,9 @@ Reason:
 
             return None, None
 
-    # ======================================================
+    # ========================================================
     # VALIDATION
-    # ======================================================
+    # ========================================================
 
     if len(df.columns) < 2:
 
@@ -110,23 +112,23 @@ Reason:
 
         return None, None
 
-    # ======================================================
+    # ========================================================
     # SHOW DETECTED COLUMNS
-    # ======================================================
+    # ========================================================
 
-    st.write(f"Detected columns in {uploaded_file.name}:")
-    st.write(df.head())
+    st.write(f"Detected columns in {uploaded_file.name}")
+    st.dataframe(df.head())
 
-    # ======================================================
-    # USER SELECTS COLUMNS
-    # ======================================================
+    # ========================================================
+    # USER COLUMN SELECTION
+    # ========================================================
 
     col1, col2 = st.columns(2)
 
     with col1:
 
         x_col = st.selectbox(
-            f"X column ({uploaded_file.name})",
+            f"Frequency Column ({uploaded_file.name})",
             df.columns,
             key=f"xcol_{uploaded_file.name}"
         )
@@ -134,14 +136,14 @@ Reason:
     with col2:
 
         y_col = st.selectbox(
-            f"Y column ({uploaded_file.name})",
+            f"Flux Column ({uploaded_file.name})",
             df.columns,
             key=f"ycol_{uploaded_file.name}"
         )
 
-    # ======================================================
-    # CONVERT TO NUMERIC
-    # ======================================================
+    # ========================================================
+    # NUMERIC CONVERSION
+    # ========================================================
 
     try:
 
@@ -166,85 +168,60 @@ Reason:
 
         return None, None
 
-    # ======================================================
-    # CHECK FOR NaNs
-    # ======================================================
+    # ========================================================
+    # VALIDATION
+    # ========================================================
 
     if np.any(~np.isfinite(x)):
 
         st.warning(
-            f"{uploaded_file.name}: X column contains invalid values."
+            f"{uploaded_file.name}: Frequency column contains invalid values."
         )
 
     if np.any(~np.isfinite(y)):
 
         st.warning(
-            f"{uploaded_file.name}: Y column contains invalid values."
+            f"{uploaded_file.name}: Flux column contains invalid values."
         )
 
     return x, y
+
+
 # ============================================================
 # X CONVERSION
+# Frequency only
 # ============================================================
 
-def convert_x_to_frequency(x, xtype, unit):
+def convert_x_to_frequency(x, unit):
 
-    if xtype == "Frequency":
+    quantity = x * u.Unit(unit)
 
-        quantity = x * u.Unit(unit)
-
-        nu = quantity.to(u.Hz)
-
-    elif xtype == "Wavelength":
-
-        quantity = x * u.Unit(unit)
-
-        nu = quantity.to(
-            u.Hz,
-            equivalencies=u.spectral()
-        )
-
-    elif xtype == "Energy":
-
-        quantity = x * u.Unit(unit)
-
-        wavelength = quantity.to(
-            u.m,
-            equivalencies=u.spectral()
-        )
-
-        nu = wavelength.to(
-            u.Hz,
-            equivalencies=u.spectral()
-        )
+    nu = quantity.to(u.Hz)
 
     return nu.value
 
 
 # ============================================================
 # Y CONVERSION
+# Only:
+# F_nu
+# nuF_nu
 # ============================================================
 
 def convert_y_to_fnu(nu, y, ytype):
 
-    lam = c.value / nu
-
+    # already F_nu
     if ytype == "F_nu":
+
         return y
 
+    # convert nuF_nu -> F_nu
     elif ytype == "nuF_nu":
+
         return y / nu
 
-    elif ytype == "F_lambda":
-        return y * (lam**2 / c.value)
-
-    elif ytype == "lambdaF_lambda":
-
-        f_lambda = y / lam
-
-        return f_lambda * (lam**2 / c.value)
-
     else:
+
         return y
 
 
@@ -258,6 +235,10 @@ def log_interp(x, y, common_x):
         (x > 0)
         &
         (y > 0)
+        &
+        np.isfinite(x)
+        &
+        np.isfinite(y)
     )
 
     x = x[mask]
@@ -267,14 +248,16 @@ def log_interp(x, y, common_x):
         np.log10(x),
         np.log10(y),
         bounds_error=False,
-        fill_value=-np.inf
+        fill_value=np.nan
     )
 
-    y_new = 10**interp_func(
+    interp_vals = interp_func(
         np.log10(common_x)
     )
 
-    y_new[np.isinf(y_new)] = 0
+    y_new = 10**interp_vals
+
+    y_new[~np.isfinite(y_new)] = np.nan
 
     return y_new
 
@@ -285,7 +268,17 @@ def log_interp(x, y, common_x):
 
 uploaded_files = st.file_uploader(
     "Upload Spectra",
-    type=["csv", "txt", "dat"],
+    type=[
+        "csv",
+        "txt",
+        "dat",
+        "ascii",
+        "ecsv",
+        "fits",
+        "fit",
+        "fts",
+        "xlsx"
+    ],
     accept_multiple_files=True
 )
 
@@ -299,79 +292,43 @@ if uploaded_files:
 
     st.sidebar.header("Spectrum Settings")
 
-    # --------------------------------------------------------
-    # USER SETTINGS FOR EACH FILE
-    # --------------------------------------------------------
+    # ========================================================
+    # UNIT OPTIONS
+    # ========================================================
+
+    frequency_units = [
+        "Hz",
+        "kHz",
+        "MHz",
+        "GHz",
+        "THz"
+    ]
+
+    # ========================================================
+    # PROCESS FILES
+    # ========================================================
 
     for i, uploaded_file in enumerate(uploaded_files):
 
         st.sidebar.subheader(f"Spectrum {i+1}")
 
-        x_type = st.sidebar.selectbox(
-            f"X-axis Type ({uploaded_file.name})",
-            ["Frequency", "Wavelength", "Energy"],
-            key=f"x_type_{i}"
+        # ----------------------------------------------------
+        # FREQUENCY UNIT
+        # ----------------------------------------------------
+
+        x_unit = st.sidebar.selectbox(
+            f"Frequency Unit ({uploaded_file.name})",
+            frequency_units,
+            key=f"x_unit_{i}"
         )
 
-    
-        # ======================================================
-        # UNIT OPTIONS
-        # ======================================================
-        
-        frequency_units = [
-            "Hz",
-            "kHz",
-            "MHz",
-            "GHz",
-            "THz"
-        ]
-        
-        wavelength_units = [
-            "Angstrom",
-            "nm",
-            "um",
-            "mm",
-            "cm",
-            "m"
-        ]
-        
-        energy_units = [
-            "eV",
-            "keV",
-            "MeV",
-            "GeV"
-        ]
-        
-        # ======================================================
-        # UNIT SELECTOR
-        # ======================================================
-        
-        if x_type == "Frequency":
-        
-            x_unit = st.sidebar.selectbox(
-                f"Frequency Unit ({uploaded_file.name})",
-                frequency_units,
-                key=f"x_unit_{i}"
-            )
-        
-        elif x_type == "Wavelength":
-        
-            x_unit = st.sidebar.selectbox(
-                f"Wavelength Unit ({uploaded_file.name})",
-                wavelength_units,
-                key=f"x_unit_{i}"
-            )
-        
-        elif x_type == "Energy":
-        
-            x_unit = st.sidebar.selectbox(
-                f"Energy Unit ({uploaded_file.name})",
-                energy_units,
-                key=f"x_unit_{i}"
-            )
+        # ----------------------------------------------------
+        # Y TYPE
+        # ----------------------------------------------------
+
         y_type = st.sidebar.selectbox(
             f"Y-axis Type ({uploaded_file.name})",
-            ["F_nu", "nuF_nu", "F_lambda", "lambdaF_lambda"],
+            ["F_nu", "nuF_nu"],
             key=f"y_type_{i}"
         )
 
@@ -385,17 +342,16 @@ if uploaded_files:
             continue
 
         # ----------------------------------------------------
-        # CONVERT X
+        # CONVERT TO Hz
         # ----------------------------------------------------
 
         nu = convert_x_to_frequency(
             x,
-            x_type,
             x_unit
         )
 
         # ----------------------------------------------------
-        # CONVERT Y
+        # CONVERT TO F_nu
         # ----------------------------------------------------
 
         fnu = convert_y_to_fnu(
@@ -403,6 +359,23 @@ if uploaded_files:
             y,
             y_type
         )
+
+        # ----------------------------------------------------
+        # CLEANING
+        # ----------------------------------------------------
+
+        mask = (
+            np.isfinite(nu)
+            &
+            np.isfinite(fnu)
+            &
+            (nu > 0)
+            &
+            (fnu > 0)
+        )
+
+        nu = nu[mask]
+        fnu = fnu[mask]
 
         # ----------------------------------------------------
         # SORT
@@ -413,11 +386,25 @@ if uploaded_files:
         nu = nu[sort_idx]
         fnu = fnu[sort_idx]
 
+        # ----------------------------------------------------
+        # STORE
+        # ----------------------------------------------------
+
         spectra.append({
             "name": uploaded_file.name,
             "nu": nu,
             "fnu": fnu
         })
+
+    # ========================================================
+    # VALIDATE
+    # ========================================================
+
+    if len(spectra) == 0:
+
+        st.error("No valid spectra loaded.")
+
+        st.stop()
 
     # ========================================================
     # COMMON GRID
@@ -460,7 +447,7 @@ if uploaded_files:
             "flux": interp_flux
         })
 
-        total_fnu += interp_flux
+        total_fnu += np.nan_to_num(interp_flux)
 
     # ========================================================
     # TABS
@@ -473,7 +460,7 @@ if uploaded_files:
     ])
 
     # ========================================================
-    # ORIGINAL
+    # ORIGINAL SPECTRA
     # ========================================================
 
     with tab1:
@@ -486,7 +473,7 @@ if uploaded_files:
                 go.Scatter(
                     x=spectrum["nu"],
                     y=spectrum["fnu"],
-                    mode='lines',
+                    mode='lines+markers',
                     name=spectrum["name"]
                 )
             )
@@ -515,10 +502,12 @@ if uploaded_files:
 
         for interp_spec in interpolated_spectra:
 
+            mask = np.isfinite(interp_spec["flux"])
+
             fig.add_trace(
                 go.Scatter(
-                    x=common_nu,
-                    y=interp_spec["flux"],
+                    x=common_nu[mask],
+                    y=interp_spec["flux"][mask],
                     mode='lines',
                     name=interp_spec["name"]
                 )
@@ -549,10 +538,12 @@ if uploaded_files:
         # individual components
         for interp_spec in interpolated_spectra:
 
+            mask = np.isfinite(interp_spec["flux"])
+
             fig.add_trace(
                 go.Scatter(
-                    x=common_nu,
-                    y=interp_spec["flux"],
+                    x=common_nu[mask],
+                    y=interp_spec["flux"][mask],
                     mode='lines',
                     opacity=0.4,
                     name=interp_spec["name"]
@@ -593,7 +584,7 @@ if uploaded_files:
         "Fnu_Total": total_fnu
     })
 
-    # add individual components
+    # add individual spectra
     for interp_spec in interpolated_spectra:
 
         output_df[
