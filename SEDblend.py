@@ -50,7 +50,7 @@ def add_spectral_regions(fig):
             "name": "Radio",
             "x0": 1e6,
             "x1": 3e11,
-            "color": "rgba(0, 100, 255, 1)"
+            "color": "rgba(0, 100, 255, 0.5)"
         },
 
         {
