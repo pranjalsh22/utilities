@@ -224,10 +224,13 @@ Reason:
         )
 
     with col2:
-
+    
         y_col = st.selectbox(
             f"Flux Column ({uploaded_file.name})",
             df.columns,
+    
+            index=1,
+    
             key=f"ycol_{uploaded_file.name}"
         )
 
