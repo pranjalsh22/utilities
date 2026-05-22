@@ -444,7 +444,12 @@ if uploaded_files:
             "flux": interp_flux
         })
 
-        total_fnu += np.nan_to_num(interp_flux)
+        valid = np.isfinite(interp_flux)
+
+        total_fnu[valid] += interp_flux[valid]
+
+    # preserve missing regions
+    total_fnu[total_fnu == 0] = np.nan
 
     # ========================================================
     # TABS
@@ -564,10 +569,12 @@ if uploaded_files:
             )
 
         # total spectrum
+        total_mask = np.isfinite(total_fnu)
+
         fig.add_trace(
             go.Scatter(
-                x=common_nu,
-                y=total_fnu,
+                x=common_nu[total_mask],
+                y=total_fnu[total_mask],
                 mode='lines',
                 line=dict(width=4),
                 name='TOTAL',
