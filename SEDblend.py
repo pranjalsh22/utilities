@@ -39,7 +39,82 @@ The app:
 """)
 
 # ============================================================
-# FUNCTIONS
+# SPECTRAL REGIONS
+# ============================================================
+
+def add_spectral_regions(fig):
+
+    spectral_regions = [
+
+        {
+            "name": "Radio",
+            "x0": 1e6,
+            "x1": 3e11,
+            "color": "rgba(0, 100, 255, 0.08)"
+        },
+
+        {
+            "name": "Microwave",
+            "x0": 3e11,
+            "x1": 3e12,
+            "color": "rgba(0, 255, 255, 0.08)"
+        },
+
+        {
+            "name": "Infrared",
+            "x0": 3e12,
+            "x1": 4e14,
+            "color": "rgba(255, 100, 0, 0.08)"
+        },
+
+        {
+            "name": "Optical",
+            "x0": 4e14,
+            "x1": 7.5e14,
+            "color": "rgba(255, 255, 0, 0.08)"
+        },
+
+        {
+            "name": "Ultraviolet",
+            "x0": 7.5e14,
+            "x1": 3e16,
+            "color": "rgba(180, 0, 255, 0.08)"
+        },
+
+        {
+            "name": "X-ray",
+            "x0": 3e16,
+            "x1": 3e19,
+            "color": "rgba(255, 0, 0, 0.08)"
+        },
+
+        {
+            "name": "Gamma-ray",
+            "x0": 3e19,
+            "x1": 1e25,
+            "color": "rgba(255, 255, 255, 0.05)"
+        }
+    ]
+
+    for region in spectral_regions:
+
+        fig.add_vrect(
+            x0=region["x0"],
+            x1=region["x1"],
+
+            fillcolor=region["color"],
+            opacity=0.25,
+            line_width=0,
+
+            annotation_text=region["name"],
+            annotation_position="top left"
+        )
+
+    return fig
+
+
+# ============================================================
+# LOAD SPECTRUM
 # ============================================================
 
 def load_spectrum(uploaded_file):
@@ -71,7 +146,7 @@ def load_spectrum(uploaded_file):
         df = pd.read_excel(uploaded_file)
 
     # ========================================================
-    # TEXT-BASED FILES
+    # TEXT FILES
     # ========================================================
 
     else:
@@ -113,7 +188,7 @@ Reason:
         return None, None
 
     # ========================================================
-    # SHOW DETECTED COLUMNS
+    # SHOW COLUMNS
     # ========================================================
 
     st.subheader(f"Detected Columns: {uploaded_file.name}")
@@ -169,22 +244,6 @@ Reason:
 
         return None, None
 
-    # ========================================================
-    # VALIDATION
-    # ========================================================
-
-    if np.any(~np.isfinite(x)):
-
-        st.warning(
-            f"{uploaded_file.name}: Frequency column contains invalid values."
-        )
-
-    if np.any(~np.isfinite(y)):
-
-        st.warning(
-            f"{uploaded_file.name}: Flux column contains invalid values."
-        )
-
     return x, y
 
 
@@ -207,12 +266,10 @@ def convert_x_to_frequency(x, unit):
 
 def convert_y_to_fnu(nu, y, ytype):
 
-    # already F_nu
     if ytype == "F_nu":
 
         return y
 
-    # convert nuF_nu -> F_nu
     elif ytype == "nuF_nu":
 
         return y / nu
@@ -289,10 +346,6 @@ if uploaded_files:
 
     st.sidebar.header("Spectrum Settings")
 
-    # ========================================================
-    # UNIT OPTIONS
-    # ========================================================
-
     frequency_units = [
         "Hz",
         "kHz",
@@ -302,6 +355,15 @@ if uploaded_files:
     ]
 
     # ========================================================
+    # PLOT MODE
+    # ========================================================
+
+    plot_mode = st.sidebar.selectbox(
+        "Plot Representation",
+        ["F_nu", "nuF_nu"]
+    )
+
+    # ========================================================
     # PROCESS FILES
     # ========================================================
 
@@ -309,19 +371,11 @@ if uploaded_files:
 
         st.sidebar.subheader(f"Spectrum {i+1}")
 
-        # ----------------------------------------------------
-        # FREQUENCY UNIT
-        # ----------------------------------------------------
-
         x_unit = st.sidebar.selectbox(
             f"Frequency Unit ({uploaded_file.name})",
             frequency_units,
             key=f"x_unit_{i}"
         )
-
-        # ----------------------------------------------------
-        # Y TYPE
-        # ----------------------------------------------------
 
         y_type = st.sidebar.selectbox(
             f"Y-axis Type ({uploaded_file.name})",
@@ -358,7 +412,7 @@ if uploaded_files:
         )
 
         # ----------------------------------------------------
-        # CLEANING
+        # CLEAN
         # ----------------------------------------------------
 
         mask = (
@@ -448,8 +502,34 @@ if uploaded_files:
 
         total_fnu[valid] += interp_flux[valid]
 
-    # preserve missing regions
     total_fnu[total_fnu == 0] = np.nan
+
+    # ========================================================
+    # PLOT CONFIG
+    # ========================================================
+
+    plot_config = {
+
+        "displayModeBar": True,
+
+        "modeBarButtonsToRemove": [
+            "lasso2d",
+            "select2d",
+            "autoScale2d"
+        ],
+
+        "toImageButtonOptions": {
+
+            "format": "png",
+            "filename": "SEDBlend",
+            "height": 900,
+            "width": 1600,
+            "scale": 3
+        },
+
+        "scrollZoom": True,
+        "responsive": True
+    }
 
     # ========================================================
     # TABS
@@ -462,19 +542,33 @@ if uploaded_files:
     ])
 
     # ========================================================
-    # ORIGINAL SPECTRA
+    # ORIGINAL
     # ========================================================
 
     with tab1:
 
         fig = go.Figure()
 
+        fig = add_spectral_regions(fig)
+
         for spectrum in spectra:
+
+            if plot_mode == "nuF_nu":
+
+                plot_flux = (
+                    spectrum["nu"]
+                    *
+                    spectrum["fnu"]
+                )
+
+            else:
+
+                plot_flux = spectrum["fnu"]
 
             fig.add_trace(
                 go.Scatter(
                     x=spectrum["nu"],
-                    y=spectrum["fnu"],
+                    y=plot_flux,
                     mode='lines+markers',
                     name=spectrum["name"],
 
@@ -485,19 +579,54 @@ if uploaded_files:
             )
 
         fig.update_layout(
+
             title="Original Spectra",
+
             xaxis_title="Frequency (Hz)",
-            yaxis_title="F_nu",
+
+            yaxis_title=plot_mode,
+
             xaxis_type="log",
             yaxis_type="log",
+
             height=700,
+
             hovermode="x unified",
-            template="plotly_dark"
+
+            template="plotly_dark",
+
+            paper_bgcolor="black",
+            plot_bgcolor="black",
+
+            font=dict(size=16),
+
+            legend=dict(
+                bgcolor="rgba(0,0,0,0)",
+                borderwidth=0
+            ),
+
+            margin=dict(
+                l=40,
+                r=40,
+                t=60,
+                b=40
+            ),
+
+            xaxis=dict(
+                showgrid=True,
+                gridcolor="rgba(255,255,255,0.08)"
+            ),
+
+            yaxis=dict(
+                showgrid=True,
+                gridcolor="rgba(255,255,255,0.08)"
+            )
         )
 
         st.plotly_chart(
             fig,
-            use_container_width=True
+            use_container_width=True,
+            config=plot_config
         )
 
     # ========================================================
@@ -508,14 +637,28 @@ if uploaded_files:
 
         fig = go.Figure()
 
+        fig = add_spectral_regions(fig)
+
         for interp_spec in interpolated_spectra:
 
             mask = np.isfinite(interp_spec["flux"])
 
+            if plot_mode == "nuF_nu":
+
+                plot_flux = (
+                    common_nu[mask]
+                    *
+                    interp_spec["flux"][mask]
+                )
+
+            else:
+
+                plot_flux = interp_spec["flux"][mask]
+
             fig.add_trace(
                 go.Scatter(
                     x=common_nu[mask],
-                    y=interp_spec["flux"][mask],
+                    y=plot_flux,
                     mode='lines',
                     name=interp_spec["name"],
 
@@ -526,19 +669,54 @@ if uploaded_files:
             )
 
         fig.update_layout(
+
             title="Interpolated Spectra",
+
             xaxis_title="Frequency (Hz)",
-            yaxis_title="F_nu",
+
+            yaxis_title=plot_mode,
+
             xaxis_type="log",
             yaxis_type="log",
+
             height=700,
+
             hovermode="x unified",
-            template="plotly_dark"
+
+            template="plotly_dark",
+
+            paper_bgcolor="black",
+            plot_bgcolor="black",
+
+            font=dict(size=16),
+
+            legend=dict(
+                bgcolor="rgba(0,0,0,0)",
+                borderwidth=0
+            ),
+
+            margin=dict(
+                l=40,
+                r=40,
+                t=60,
+                b=40
+            ),
+
+            xaxis=dict(
+                showgrid=True,
+                gridcolor="rgba(255,255,255,0.08)"
+            ),
+
+            yaxis=dict(
+                showgrid=True,
+                gridcolor="rgba(255,255,255,0.08)"
+            )
         )
 
         st.plotly_chart(
             fig,
-            use_container_width=True
+            use_container_width=True,
+            config=plot_config
         )
 
     # ========================================================
@@ -549,17 +727,34 @@ if uploaded_files:
 
         fig = go.Figure()
 
-        # individual components
+        fig = add_spectral_regions(fig)
+
+        # ----------------------------------------------------
+        # INDIVIDUAL COMPONENTS
+        # ----------------------------------------------------
+
         for interp_spec in interpolated_spectra:
 
             mask = np.isfinite(interp_spec["flux"])
 
+            if plot_mode == "nuF_nu":
+
+                plot_flux = (
+                    common_nu[mask]
+                    *
+                    interp_spec["flux"][mask]
+                )
+
+            else:
+
+                plot_flux = interp_spec["flux"][mask]
+
             fig.add_trace(
                 go.Scatter(
                     x=common_nu[mask],
-                    y=interp_spec["flux"][mask],
+                    y=plot_flux,
                     mode='lines',
-                    opacity=0.4,
+                    opacity=0.35,
                     name=interp_spec["name"],
 
                     hovertemplate=
@@ -568,15 +763,30 @@ if uploaded_files:
                 )
             )
 
-        # total spectrum
+        # ----------------------------------------------------
+        # TOTAL
+        # ----------------------------------------------------
+
         total_mask = np.isfinite(total_fnu)
+
+        if plot_mode == "nuF_nu":
+
+            total_plot = (
+                common_nu[total_mask]
+                *
+                total_fnu[total_mask]
+            )
+
+        else:
+
+            total_plot = total_fnu[total_mask]
 
         fig.add_trace(
             go.Scatter(
                 x=common_nu[total_mask],
-                y=total_fnu[total_mask],
+                y=total_plot,
                 mode='lines',
-                line=dict(width=4),
+                line=dict(width=5),
                 name='TOTAL',
 
                 hovertemplate=
@@ -586,23 +796,58 @@ if uploaded_files:
         )
 
         fig.update_layout(
+
             title="Combined Spectrum",
+
             xaxis_title="Frequency (Hz)",
-            yaxis_title="F_nu",
+
+            yaxis_title=plot_mode,
+
             xaxis_type="log",
             yaxis_type="log",
+
             height=700,
+
             hovermode="x unified",
-            template="plotly_dark"
+
+            template="plotly_dark",
+
+            paper_bgcolor="black",
+            plot_bgcolor="black",
+
+            font=dict(size=16),
+
+            legend=dict(
+                bgcolor="rgba(0,0,0,0)",
+                borderwidth=0
+            ),
+
+            margin=dict(
+                l=40,
+                r=40,
+                t=60,
+                b=40
+            ),
+
+            xaxis=dict(
+                showgrid=True,
+                gridcolor="rgba(255,255,255,0.08)"
+            ),
+
+            yaxis=dict(
+                showgrid=True,
+                gridcolor="rgba(255,255,255,0.08)"
+            )
         )
 
         st.plotly_chart(
             fig,
-            use_container_width=True
+            use_container_width=True,
+            config=plot_config
         )
 
     # ========================================================
-    # DOWNLOAD
+    # DOWNLOAD CSV
     # ========================================================
 
     output_df = pd.DataFrame({
@@ -610,7 +855,6 @@ if uploaded_files:
         "Fnu_Total": total_fnu
     })
 
-    # individual spectra
     for interp_spec in interpolated_spectra:
 
         output_df[
