@@ -7,6 +7,10 @@ from scipy.interpolate import interp1d
 from astropy import units as u
 from astropy.constants import c
 
+
+from astropy.table import Table
+from astropy.io import fits
+
 # ============================================================
 # PAGE CONFIG
 # ============================================================
@@ -42,63 +46,10 @@ def load_spectrum(uploaded_file):
     ext = os.path.splitext(filename)[1]
 
     # ======================================================
-    # CSV
-    # ======================================================
-
-    if ext == ".csv":
-
-        df = pd.read_csv(uploaded_file)
-
-    # ======================================================
-    # TSV
-    # ======================================================
-
-    elif ext == ".tsv":
-
-        df = pd.read_csv(
-            uploaded_file,
-            sep="\t"
-        )
-
-    # ======================================================
-    # TXT / DAT / ASCII
-    # ======================================================
-
-    elif ext in [
-        ".txt",
-        ".dat",
-        ".ascii"
-    ]:
-
-        df = pd.read_csv(
-            uploaded_file,
-            sep=r"\s+",
-            comment="#",
-            header=None,
-            engine="python"
-        )
-            # ======================================================
-    # ECSV
-    # ======================================================
-
-    elif ext == ".ecsv":
-
-        table = Table.read(
-            uploaded_file,
-            format="ascii.ecsv"
-        )
-
-        df = table.to_pandas()
-
-    # ======================================================
     # FITS
     # ======================================================
 
-    elif ext in [
-        ".fits",
-        ".fit",
-        ".fts"
-    ]:
+    if ext in [".fits", ".fit", ".fts"]:
 
         hdul = fits.open(uploaded_file)
 
@@ -117,28 +68,119 @@ def load_spectrum(uploaded_file):
         df = pd.read_excel(uploaded_file)
 
     # ======================================================
-    # UNKNOWN
+    # TEXT-BASED FILES
     # ======================================================
 
     else:
 
-        raise ValueError(
-            f"Unsupported file type: {ext}"
-        )
+        uploaded_file.seek(0)
+
+        try:
+
+            # Astropy auto-detects format
+            table = Table.read(
+                uploaded_file,
+                format="ascii"
+            )
+
+            df = table.to_pandas()
+
+        except Exception as e:
+
+            st.error(f"""
+Could not parse file:
+
+{uploaded_file.name}
+
+Reason:
+{e}
+""")
+
+            return None, None
 
     # ======================================================
-    # VALIDATE
+    # VALIDATION
     # ======================================================
 
     if len(df.columns) < 2:
 
-        raise ValueError(
-            "Spectrum must contain at least 2 columns"
+        st.error(
+            f"{uploaded_file.name} has fewer than 2 columns."
         )
 
-    # use first 2 columns
-    x = np.array(df.iloc[:, 0], dtype=float)
-    y = np.array(df.iloc[:, 1], dtype=float)
+        return None, None
+
+    # ======================================================
+    # SHOW DETECTED COLUMNS
+    # ======================================================
+
+    st.write(f"Detected columns in {uploaded_file.name}:")
+    st.write(df.head())
+
+    # ======================================================
+    # USER SELECTS COLUMNS
+    # ======================================================
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        x_col = st.selectbox(
+            f"X column ({uploaded_file.name})",
+            df.columns,
+            key=f"xcol_{uploaded_file.name}"
+        )
+
+    with col2:
+
+        y_col = st.selectbox(
+            f"Y column ({uploaded_file.name})",
+            df.columns,
+            key=f"ycol_{uploaded_file.name}"
+        )
+
+    # ======================================================
+    # CONVERT TO NUMERIC
+    # ======================================================
+
+    try:
+
+        x = np.array(
+            pd.to_numeric(df[x_col]),
+            dtype=float
+        )
+
+        y = np.array(
+            pd.to_numeric(df[y_col]),
+            dtype=float
+        )
+
+    except Exception as e:
+
+        st.error(f"""
+Could not convert selected columns to numeric values.
+
+Reason:
+{e}
+""")
+
+        return None, None
+
+    # ======================================================
+    # CHECK FOR NaNs
+    # ======================================================
+
+    if np.any(~np.isfinite(x)):
+
+        st.warning(
+            f"{uploaded_file.name}: X column contains invalid values."
+        )
+
+    if np.any(~np.isfinite(y)):
+
+        st.warning(
+            f"{uploaded_file.name}: Y column contains invalid values."
+        )
 
     return x, y
 # ============================================================
