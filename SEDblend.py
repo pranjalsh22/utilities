@@ -207,8 +207,14 @@ Reason:
 
     st.subheader(f"Detected Columns: {uploaded_file.name}")
 
-    st.dataframe(df.head())
-
+    
+    styled_df = df.head().style.format(
+        lambda x: f"{x:.3e}"
+        if isinstance(x, (float, np.floating))
+        else x
+    )
+    
+    st.dataframe(styled_df)
     # ========================================================
     # USER COLUMN SELECTION
     # ========================================================
