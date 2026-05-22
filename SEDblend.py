@@ -50,49 +50,49 @@ def add_spectral_regions(fig):
             "name": "Radio",
             "x0": 1e6,
             "x1": 3e11,
-            "color": "rgba(0, 100, 255, 0.08)"
+            "color": "rgba(0, 100, 255, 0.35)"
         },
 
         {
             "name": "Microwave",
             "x0": 3e11,
             "x1": 3e12,
-            "color": "rgba(0, 255, 255, 0.08)"
+            "color": "rgba(0, 255, 255, 0.30)"
         },
 
         {
             "name": "Infrared",
             "x0": 3e12,
             "x1": 4e14,
-            "color": "rgba(255, 100, 0, 0.08)"
+            "color": "rgba(255, 140, 0, 0.30)"
         },
 
         {
             "name": "Optical",
             "x0": 4e14,
             "x1": 7.5e14,
-            "color": "rgba(255, 255, 0, 0.08)"
+            "color": "rgba(255, 255, 0, 0.35)"
         },
 
         {
             "name": "Ultraviolet",
             "x0": 7.5e14,
             "x1": 3e16,
-            "color": "rgba(180, 0, 255, 0.08)"
+            "color": "rgba(180, 0, 255, 0.30)"
         },
 
         {
             "name": "X-ray",
             "x0": 3e16,
             "x1": 3e19,
-            "color": "rgba(255, 0, 0, 0.08)"
+            "color": "rgba(255, 0, 0, 0.30)"
         },
 
         {
             "name": "Gamma-ray",
             "x0": 3e19,
             "x1": 1e25,
-            "color": "rgba(255, 255, 255, 0.05)"
+            "color": "rgba(255, 255, 255, 0.18)"
         }
     ]
 
@@ -103,11 +103,19 @@ def add_spectral_regions(fig):
             x1=region["x1"],
 
             fillcolor=region["color"],
-            opacity=0.25,
+
+            opacity=0.55,
+
             line_width=0,
 
             annotation_text=region["name"],
-            annotation_position="top left"
+
+            annotation_position="top left",
+
+            annotation=dict(
+                font_size=13,
+                font_color="white"
+            )
         )
 
     return fig
@@ -532,6 +540,72 @@ if uploaded_files:
     }
 
     # ========================================================
+    # COMMON LAYOUT FUNCTION
+    # ========================================================
+
+    def apply_layout(fig, title):
+
+        fig.update_layout(
+
+            title=title,
+
+            xaxis_title="Frequency (Hz)",
+
+            yaxis_title=plot_mode,
+
+            height=700,
+
+            hovermode="x unified",
+
+            template="plotly_dark",
+
+            paper_bgcolor="black",
+            plot_bgcolor="black",
+
+            font=dict(size=16),
+
+            legend=dict(
+                bgcolor="rgba(0,0,0,0)",
+                borderwidth=0
+            ),
+
+            margin=dict(
+                l=40,
+                r=40,
+                t=60,
+                b=40
+            ),
+
+            xaxis=dict(
+
+                type="log",
+
+                showgrid=True,
+
+                gridcolor="rgba(255,255,255,0.08)",
+
+                tickformat=".0e",
+
+                exponentformat="power"
+            ),
+
+            yaxis=dict(
+
+                type="log",
+
+                showgrid=True,
+
+                gridcolor="rgba(255,255,255,0.08)",
+
+                tickformat=".0e",
+
+                exponentformat="power"
+            )
+        )
+
+        return fig
+
+    # ========================================================
     # TABS
     # ========================================================
 
@@ -578,50 +652,7 @@ if uploaded_files:
                 )
             )
 
-        fig.update_layout(
-
-            title="Original Spectra",
-
-            xaxis_title="Frequency (Hz)",
-
-            yaxis_title=plot_mode,
-
-            xaxis_type="log",
-            yaxis_type="log",
-
-            height=700,
-
-            hovermode="x unified",
-
-            template="plotly_dark",
-
-            paper_bgcolor="black",
-            plot_bgcolor="black",
-
-            font=dict(size=16),
-
-            legend=dict(
-                bgcolor="rgba(0,0,0,0)",
-                borderwidth=0
-            ),
-
-            margin=dict(
-                l=40,
-                r=40,
-                t=60,
-                b=40
-            ),
-
-            xaxis=dict(
-                showgrid=True,
-                gridcolor="rgba(255,255,255,0.08)"
-            ),
-
-            yaxis=dict(
-                showgrid=True,
-                gridcolor="rgba(255,255,255,0.08)"
-            )
-        )
+        fig = apply_layout(fig, "Original Spectra")
 
         st.plotly_chart(
             fig,
@@ -668,50 +699,7 @@ if uploaded_files:
                 )
             )
 
-        fig.update_layout(
-
-            title="Interpolated Spectra",
-
-            xaxis_title="Frequency (Hz)",
-
-            yaxis_title=plot_mode,
-
-            xaxis_type="log",
-            yaxis_type="log",
-
-            height=700,
-
-            hovermode="x unified",
-
-            template="plotly_dark",
-
-            paper_bgcolor="black",
-            plot_bgcolor="black",
-
-            font=dict(size=16),
-
-            legend=dict(
-                bgcolor="rgba(0,0,0,0)",
-                borderwidth=0
-            ),
-
-            margin=dict(
-                l=40,
-                r=40,
-                t=60,
-                b=40
-            ),
-
-            xaxis=dict(
-                showgrid=True,
-                gridcolor="rgba(255,255,255,0.08)"
-            ),
-
-            yaxis=dict(
-                showgrid=True,
-                gridcolor="rgba(255,255,255,0.08)"
-            )
-        )
+        fig = apply_layout(fig, "Interpolated Spectra")
 
         st.plotly_chart(
             fig,
@@ -795,84 +783,13 @@ if uploaded_files:
             )
         )
 
-        fig.update_layout(
-
-            title="Combined Spectrum",
-
-            xaxis_title="Frequency (Hz)",
-
-            yaxis_title=plot_mode,
-
-            xaxis_type="log",
-            yaxis_type="log",
-
-            height=700,
-
-            hovermode="x unified",
-
-            template="plotly_dark",
-
-            paper_bgcolor="black",
-            plot_bgcolor="black",
-
-            font=dict(size=16),
-
-            legend=dict(
-                bgcolor="rgba(0,0,0,0)",
-                borderwidth=0
-            ),
-
-            margin=dict(
-                l=40,
-                r=40,
-                t=60,
-                b=40
-            ),
-
-            xaxis=dict(
-                showgrid=True,
-                gridcolor="rgba(255,255,255,0.08)"
-            ),
-
-            yaxis=dict(
-                showgrid=True,
-                gridcolor="rgba(255,255,255,0.08)"
-            )
-        )
+        fig = apply_layout(fig, "Combined Spectrum")
 
         st.plotly_chart(
             fig,
             use_container_width=True,
             config=plot_config
         )
-
-    # ========================================================
-    # DOWNLOAD CSV
-    # ========================================================
-
-    output_df = pd.DataFrame({
-        "Frequency_Hz": common_nu,
-        "Fnu_Total": total_fnu
-    })
-
-    for interp_spec in interpolated_spectra:
-
-        output_df[
-            interp_spec["name"]
-        ] = interp_spec["flux"]
-
-    csv = output_df.to_csv(index=False)
-
-    st.download_button(
-        label="Download Combined Spectrum CSV",
-        data=csv,
-        file_name="combined_spectrum.csv",
-        mime="text/csv"
-    )
-
-# ============================================================
-# EMPTY
-# ============================================================
 
 else:
 
